@@ -67,4 +67,10 @@ class PloverBot(discord.Client):
 				self.player.start();
 
 client = PloverBot()
-client.run(args.token)
+loop = asyncio.get_event_loop()
+try:
+    loop.run_until_complete(client.start(args.token))
+except KeyboardInterrupt:
+    loop.run_until_complete(client.logout())
+finally:
+    loop.close()
