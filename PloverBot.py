@@ -6,6 +6,7 @@ import os.path
 # Add some command line arguments
 parser = argparse.ArgumentParser(description='Starts up the Plover bot.')
 parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token', required=True)
+parser.add_argument('-s', '--sounds', dest='soundDirectory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
 
 args = parser.parse_args()
 
@@ -23,8 +24,9 @@ class VoiceEntry:
 		self.song = song
 
 class PloverBot(discord.Client):
-	def __init__(self):
+	def __init__(self, soundDirectory):
 		   super().__init__()
+		   self.soundDirectory = soundDirectory
 		   self.player = None
 		   self.voice = None
 		   self.commands = []
@@ -59,18 +61,19 @@ class PloverBot(discord.Client):
 	async def play_voice(self, message, sound):
 		if not self.is_playing():
 			await self.join_channel(message)
-			if os.path.isfile('sounds/' + sound + '.mp3'):
-				self.player = self.voice.create_ffmpeg_player('sounds/' + sound + '.mp3')
+			if os.path.isfile(os.path.join(self.soundDirectory, sound + '.mp3')):
+				self.player = self.voice.create_ffmpeg_player(os.path.join(self.soundDirectory, sound + '.mp3'))
 				self.player.start();
-			elif os.path.isfile('sounds/' + sound + '.wav'):
-				self.player = self.voice.create_ffmpeg_player('sounds/' + sound + '.wav')
+			elif os.path.isfile(os.path.join(self.soundDirectory, sound + '.wav')):
+				self.player = self.voice.create_ffmpeg_player(os.path.join(self.soundDirectory, sound + '.wav'))
 				self.player.start();
 
-client = PloverBot()
+client = PloverBot(args.soundDirectory)
 loop = asyncio.get_event_loop()
 try:
     loop.run_until_complete(client.start(args.token))
 except KeyboardInterrupt:
-    loop.run_until_complete(client.logout())
+	print('Logging out...')
+	loop.run_until_complete(client.logout())
 finally:
     loop.close()
