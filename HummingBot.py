@@ -4,7 +4,7 @@ import asyncio
 import os.path
 
 # Add some command line arguments
-parser = argparse.ArgumentParser(description='Starts up the Plover bot.')
+parser = argparse.ArgumentParser(description='Starts up the HummingBot.')
 parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token', required=True)
 parser.add_argument('-s', '--sounds', dest='soundDirectory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
 
@@ -23,7 +23,7 @@ class VoiceEntry:
 		self.channel = message.channel
 		self.song = song
 
-class PloverBot(discord.Client):
+class HummingBot(discord.Client):
 	def __init__(self, soundDirectory):
 		   super().__init__()
 		   self.soundDirectory = soundDirectory
@@ -68,7 +68,7 @@ class PloverBot(discord.Client):
 				self.player = self.voice.create_ffmpeg_player(os.path.join(self.soundDirectory, sound + '.wav'))
 				self.player.start();
 
-client = PloverBot(args.soundDirectory)
+client = HummingBot(args.soundDirectory)
 loop = asyncio.get_event_loop()
 try:
     loop.run_until_complete(client.start(args.token))
