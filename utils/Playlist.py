@@ -36,7 +36,8 @@ class Playlist:
 		await bot.add_reaction(message, '🐦')
 
 		if not bot.is_playing() and self.current_song is None:
-			bot.player = await bot.voice.create_ytdl_player(newSong.song)
+			before_options = '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2'
+			bot.player = await bot.voice.create_ytdl_player(newSong.song, before_options=before_options)
 			bot.player.start()
 
 	async def pause(self, bot, message):
