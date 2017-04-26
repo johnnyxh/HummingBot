@@ -3,6 +3,8 @@ import argparse
 import asyncio
 import os.path
 
+from utils.Playlist import Playlist
+
 # Add some command line arguments
 parser = argparse.ArgumentParser(description='Starts up the HummingBot.')
 parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token', required=True)
@@ -17,22 +19,23 @@ if not discord.opus.is_loaded():
 	# opus library is located in and with the proper filename.
 	discord.opus.load_opus('opus')
 
-class VoiceEntry:
-	def __init__(self, message, song):
-		self.requester = message.author
-		self.channel = message.channel
-		self.song = song
-
 class HummingBot(discord.Client):
 	def __init__(self, soundDirectory):
 		   super().__init__()
 		   self.soundDirectory = soundDirectory
 		   self.player = None
 		   self.voice = None
-		   self.commands = []
+		   self.modules = [Playlist()]
 
 	def is_playing(self):
 		return self.player is not None and self.player.is_playing()
+
+	async def run_command(self, message, userCommand):
+		for module in self.modules:
+			for command in module.get_commands():
+				if command['name'] == userCommand:
+					await getattr(module, userCommand)(self, message)
+
 
 	async def join_channel(self, message):
 		channel = message.author.voice.voice_channel
@@ -53,10 +56,9 @@ class HummingBot(discord.Client):
 		await self.execute_command(message)
 
 	async def execute_command(self, message):
-		messageList = message.content.split()
-		for i, item in enumerate(messageList):
-			if item.startswith('?'):
-				await self.play_voice(message, item[1:])
+		if message.content.startswith('?'):
+			await self.run_command(message, message.content.split()[0][1:])
+			await self.play_voice(message, message.content.split()[0][1:])
 
 	async def play_voice(self, message, sound):
 		if not self.is_playing():
