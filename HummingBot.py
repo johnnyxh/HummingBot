@@ -8,7 +8,7 @@ from utils.Playlist import Playlist
 # Add some command line arguments
 parser = argparse.ArgumentParser(description='Starts up the HummingBot.')
 parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token', required=True)
-parser.add_argument('-s', '--sounds', dest='soundDirectory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
+parser.add_argument('-s', '--sounds', dest='sound_directory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
 
 args = parser.parse_args()
 
@@ -20,12 +20,12 @@ if not discord.opus.is_loaded():
 	discord.opus.load_opus('opus')
 
 class HummingBot(discord.Client):
-	def __init__(self, soundDirectory):
+	def __init__(self, sound_directory):
 		   super().__init__()
-		   self.soundDirectory = soundDirectory
+		   self.sound_directory = sound_directory
 		   self.player = None
 		   self.voice = None
-		   self.modules = [Playlist()]
+		   self.modules = [Playlist(self)]
 
 	def is_playing(self):
 		return self.player is not None and self.player.is_playing()
@@ -34,7 +34,7 @@ class HummingBot(discord.Client):
 		for module in self.modules:
 			for command in module.get_commands():
 				if command['name'] == userCommand:
-					await getattr(module, userCommand)(self, message)
+					await getattr(module, userCommand)(message)
 
 
 	async def join_channel(self, message):
@@ -63,14 +63,14 @@ class HummingBot(discord.Client):
 	async def play_voice(self, message, sound):
 		if not self.is_playing():
 			await self.join_channel(message)
-			if os.path.isfile(os.path.join(self.soundDirectory, sound + '.mp3')):
-				self.player = self.voice.create_ffmpeg_player(os.path.join(self.soundDirectory, sound + '.mp3'))
+			if os.path.isfile(os.path.join(self.sound_directory, sound + '.mp3')):
+				self.player = self.voice.create_ffmpeg_player(os.path.join(self.sound_directory, sound + '.mp3'))
 				self.player.start();
-			elif os.path.isfile(os.path.join(self.soundDirectory, sound + '.wav')):
-				self.player = self.voice.create_ffmpeg_player(os.path.join(self.soundDirectory, sound + '.wav'))
+			elif os.path.isfile(os.path.join(self.sound_directory, sound + '.wav')):
+				self.player = self.voice.create_ffmpeg_player(os.path.join(self.sound_directory, sound + '.wav'))
 				self.player.start();
 
-client = HummingBot(args.soundDirectory)
+client = HummingBot(args.sound_directory)
 loop = asyncio.get_event_loop()
 try:
     loop.run_until_complete(client.start(args.token))
