@@ -2,7 +2,6 @@ import asyncio
 
 from .SongEntry import SongEntry
 
-# Right now this isn't much of a playlist, just plays a single video
 class Playlist:
 	def __init__(self, bot):
 		self.bot = bot
@@ -45,6 +44,8 @@ class Playlist:
 		await self.songs.put(new_song)
 		await self.bot.add_reaction(message, '🐦')
 
+		print('Added: ' + new_song.song)
+
 		if not self.bot.is_playing() and self.current_song is None:
 			await self.play_next()
 
@@ -55,28 +56,33 @@ class Playlist:
 		self.bot.player.stop()
 
 	async def stop(self, message):
-		# Do nothing, bring this back at some point
+		self.songs = asyncio.Queue()
+		self.bot.player.stop()
 		return
 
 	async def resume(self, message):
 		self.bot.player.resume()
 
 	async def playing(self, message):
-		# Do nothing, bring this back at some point
+		# Have this list all songs in the queue at some point
+		# Use embeds instead of plain text
+		await self.bot.send_message(message.channel, 'Currently playing: ' + self.bot.player.uploader + ' - ' + self.bot.player.title)
 		return
 
 	async def play_next(self):
 		while True:
 			self.play_next_song.clear()
+			self.current_song = None
 			try:
 				self.current_song = self.songs.get_nowait()
 				before_options = '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2'
-				self.bot.player = await self.bot.voice.create_ytdl_player(self.current_song.song, before_options=before_options, after=self.finished)
+				youtube_options = {'noplaylist': True}
+				self.bot.player = await self.bot.voice.create_ytdl_player(self.current_song.song, ytdl_options=youtube_options, before_options=before_options, after=self.finished)
+				print('Playing: ' + self.current_song.song)
 				self.bot.player.volume = 0.45
 				self.bot.player.start()
 				await self.play_next_song.wait()
 			except:
-				self.current_song = None
 				return
 
 	def finished(self):
