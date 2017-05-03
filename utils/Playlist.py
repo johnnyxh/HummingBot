@@ -1,4 +1,9 @@
 import asyncio
+import discord
+import youtube_dl
+import functools
+from urllib.parse import urlparse
+from urllib.parse import parse_qs
 
 from .SongEntry import SongEntry
 
@@ -40,11 +45,25 @@ class Playlist:
 
 	async def play(self, message):
 		await self.bot.join_channel(message)
-		new_song = SongEntry(message, message.content.split()[1])
+
+		# Extract video information, possibly better in the SongEntry class
+		#TODO: May need to figure out how to use run_in_executor within SongEntry
+		opts = {
+			'format': 'webm[abr>0]/bestaudio/best',
+			'prefer_ffmpeg': True,
+			'noplaylist': True
+		}
+		with youtube_dl.YoutubeDL(opts) as ydl:
+			func = functools.partial(ydl.extract_info, message.content.split()[1], download=False)
+			info = await self.bot.loop.run_in_executor(None, func)
+			if 'entries' in info:
+				info = info['entries'][0]
+
+		new_song = SongEntry(message, message.content.split()[1], info)
 		await self.songs.put(new_song)
 		await self.bot.add_reaction(message, '🐦')
 
-		print('Added: ' + new_song.song)
+		print('Added: ' + new_song.title)
 
 		if not self.bot.is_playing() and self.current_song is None:
 			await self.play_next()
@@ -58,16 +77,17 @@ class Playlist:
 	async def stop(self, message):
 		self.songs = asyncio.Queue()
 		self.bot.player.stop()
-		return
 
 	async def resume(self, message):
 		self.bot.player.resume()
 
 	async def playing(self, message):
 		# Have this list all songs in the queue at some point
-		# Use embeds instead of plain text
-		await self.bot.send_message(message.channel, 'Currently playing: ' + self.bot.player.uploader + ' - ' + self.bot.player.title)
-		return
+		#TODO: Have thumbnail logic in SongEntry
+		current_song_embed = discord.Embed(title=self.current_song.uploader + ' - ' + self.current_song.title, colour=0xDEADBF)
+		youtube_qparams = parse_qs(urlparse(self.current_song.url).query)
+		if 'v' in youtube_qparams: current_song_embed.set_thumbnail(url='https://img.youtube.com/vi/%s/0.jpg' % youtube_qparams['v'][0])
+		await self.bot.send_message(message.channel, embed=current_song_embed)
 
 	async def play_next(self):
 		while True:
@@ -76,9 +96,8 @@ class Playlist:
 			try:
 				self.current_song = self.songs.get_nowait()
 				before_options = '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2'
-				youtube_options = {'noplaylist': True}
-				self.bot.player = await self.bot.voice.create_ytdl_player(self.current_song.song, ytdl_options=youtube_options, before_options=before_options, after=self.finished)
-				print('Playing: ' + self.current_song.song)
+				self.bot.player = self.bot.voice.create_ffmpeg_player(self.current_song.player_url, before_options=before_options, after=self.finished)
+				print('Playing: ' + self.current_song.title)
 				self.bot.player.volume = 0.45
 				self.bot.player.start()
 				await self.play_next_song.wait()

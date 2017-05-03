@@ -1,10 +1,9 @@
-# import youtube_dl
-
 class SongEntry:
-	def __init__(self, message, song):
+	def __init__(self, message, song_url, info):
 		self.requester = message.author
 		self.channel = message.channel
-		self.song = song
-
-		#  with youtube_dl.YoutubeDL() as ydl:
-		# 	 self.info = ydl.extract_info(song, download=False)
+		self.url = song_url
+		self.uploader = info.get('uploader')
+		self.title = info.get('title')
+		self.description = info.get('description')
+		self.player_url = info['url']
