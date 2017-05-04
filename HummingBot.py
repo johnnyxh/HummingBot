@@ -39,10 +39,15 @@ class HummingBot(discord.Client):
 
 	async def join_channel(self, message):
 		channel = message.author.voice.voice_channel
-		if not self.is_voice_connected(message.server):
-			self.voice = await self.join_voice_channel(channel)
-		else:
-			await self.voice.move_to(channel)
+		try:
+			if not self.is_voice_connected(message.server):
+				self.voice = await self.join_voice_channel(channel)
+			else:
+				await self.voice.move_to(channel)
+		except discord.InvalidArgument as err:
+			await self.send_message(message.channel, 'You should get in a voice channel first')
+			raise err
+
 
 	async def on_ready(self):
 		print('Logging in as:')
@@ -58,17 +63,21 @@ class HummingBot(discord.Client):
 	async def execute_command(self, message):
 		if message.content.startswith('?'):
 			await self.run_command(message, message.content.split()[0][1:])
+			#TODO: Refactor play_voice to be in its own module so it doesn't always run
 			await self.play_voice(message, message.content.split()[0][1:])
 
 	async def play_voice(self, message, sound):
 		if not self.is_playing():
-			await self.join_channel(message)
-			if os.path.isfile(os.path.join(self.sound_directory, sound + '.mp3')):
-				self.player = self.voice.create_ffmpeg_player(os.path.join(self.sound_directory, sound + '.mp3'))
-				self.player.start();
-			elif os.path.isfile(os.path.join(self.sound_directory, sound + '.wav')):
-				self.player = self.voice.create_ffmpeg_player(os.path.join(self.sound_directory, sound + '.wav'))
-				self.player.start();
+			try:
+				await self.join_channel(message)
+				if os.path.isfile(os.path.join(self.sound_directory, sound + '.mp3')):
+					self.player = self.voice.create_ffmpeg_player(os.path.join(self.sound_directory, sound + '.mp3'))
+					self.player.start();
+				elif os.path.isfile(os.path.join(self.sound_directory, sound + '.wav')):
+					self.player = self.voice.create_ffmpeg_player(os.path.join(self.sound_directory, sound + '.wav'))
+					self.player.start();
+			except Exception as err:
+				print(err)
 
 client = HummingBot(args.sound_directory)
 loop = asyncio.get_event_loop()

@@ -44,29 +44,33 @@ class Playlist:
 		return commands
 
 	async def play(self, message):
-		await self.bot.join_channel(message)
+		try:
+			await self.bot.join_channel(message)
 
-		# Extract video information, possibly better in the SongEntry class
-		#TODO: May need to figure out how to use run_in_executor within SongEntry
-		opts = {
-			'format': 'webm[abr>0]/bestaudio/best',
-			'prefer_ffmpeg': True,
-			'noplaylist': True
-		}
-		with youtube_dl.YoutubeDL(opts) as ydl:
-			func = functools.partial(ydl.extract_info, message.content.split()[1], download=False)
-			info = await self.bot.loop.run_in_executor(None, func)
-			if 'entries' in info:
-				info = info['entries'][0]
+			# Extract video information, possibly better in the SongEntry class
+			#TODO: May need to figure out how to use run_in_executor within SongEntry
+			opts = {
+				'format': 'webm[abr>0]/bestaudio/best',
+				'prefer_ffmpeg': True,
+				'noplaylist': True,
+				'verbose': True
+			}
+			with youtube_dl.YoutubeDL(opts) as ydl:
+				func = functools.partial(ydl.extract_info, message.content.split()[1], download=False)
+				info = await self.bot.loop.run_in_executor(None, func)
+				if 'entries' in info:
+					info = info['entries'][0]
 
-		new_song = SongEntry(message, message.content.split()[1], info)
-		await self.songs.put(new_song)
-		await self.bot.add_reaction(message, '🐦')
+			new_song = SongEntry(message, message.content.split()[1], info)
+			await self.songs.put(new_song)
+			await self.bot.add_reaction(message, '🐦')
 
-		print('Added: ' + new_song.title)
+			print('Added: ' + new_song.title)
 
-		if not self.bot.is_playing() and self.current_song is None:
-			await self.play_next()
+			if not self.bot.is_playing() and self.current_song is None:
+				await self.play_next()
+		except Exception as err:
+			print(err)
 
 	async def pause(self, message):
 		self.bot.player.pause()
@@ -82,12 +86,14 @@ class Playlist:
 		self.bot.player.resume()
 
 	async def playing(self, message):
-		# Have this list all songs in the queue at some point
-		#TODO: Have thumbnail logic in SongEntry
-		current_song_embed = discord.Embed(title=self.current_song.uploader + ' - ' + self.current_song.title, colour=0xDEADBF)
-		youtube_qparams = parse_qs(urlparse(self.current_song.url).query)
-		if 'v' in youtube_qparams: current_song_embed.set_thumbnail(url='https://img.youtube.com/vi/%s/0.jpg' % youtube_qparams['v'][0])
-		await self.bot.send_message(message.channel, embed=current_song_embed)
+		song_list = list(self.songs._queue)
+
+		if (len(song_list) - 2) > 0: await self.bot.send_message(message.channel, 'There are ' + str(len(song_list) - 2) + ' other songs in the queue')
+
+		for song in song_list[1::-1]:
+			await self.bot.send_message(message.channel, embed=self.songEmbed(song, 'Coming up'))
+
+		await self.bot.send_message(message.channel, embed=self.songEmbed(self.current_song, 'Now Playing'))
 
 	async def play_next(self):
 		while True:
@@ -106,3 +112,10 @@ class Playlist:
 
 	def finished(self):
 		self.bot.loop.call_soon_threadsafe(self.play_next_song.set)
+
+	def songEmbed(self, song, description):
+		#TODO: Have thumbnail logic in SongEntry
+		song_embed = discord.Embed(title=song.uploader + ' - ' + song.title, description=description, colour=0xDEADBF)
+		youtube_qparams = parse_qs(urlparse(song.url).query)
+		if 'v' in youtube_qparams: song_embed.set_thumbnail(url='https://img.youtube.com/vi/%s/0.jpg' % youtube_qparams['v'][0])
+		return song_embed
