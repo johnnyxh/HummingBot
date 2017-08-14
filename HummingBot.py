@@ -1,5 +1,5 @@
 import discord
-import argparse
+#import argparse
 import asyncio
 import os
 import flask
@@ -7,11 +7,11 @@ import flask
 from utils.Playlist import Playlist
 
 # Add some command line arguments
-parser = argparse.ArgumentParser(description='Starts up the HummingBot.')
-parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token')
-parser.add_argument('-s', '--sounds', dest='sound_directory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
+#parser = argparse.ArgumentParser(description='Starts up the HummingBot.')
+#parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token')
+#parser.add_argument('-s', '--sounds', dest='sound_directory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
 
-args = parser.parse_args()
+#args = parser.parse_known_args()
 
 if not discord.opus.is_loaded():
 	# the 'opus' library here is opus.dll on windows
@@ -85,10 +85,10 @@ app = flask.Flask(__name__)
 def index():
 	return "Hello Heroku"
 
-client = HummingBot(args.sound_directory)
+client = HummingBot('sounds')
 loop = asyncio.get_event_loop()
 try:
-    loop.run_until_complete(client.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
+    loop.run_until_complete(client.start(os.environ['HUMMINGBOT_TOKEN']))
 except KeyboardInterrupt:
 	print('Logging out...')
 	loop.run_until_complete(client.logout())
