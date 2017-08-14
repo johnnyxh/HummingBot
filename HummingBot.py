@@ -1,14 +1,14 @@
 import discord
 import argparse
 import asyncio
-import os.path
+import os
 import flask
 
 from utils.Playlist import Playlist
 
 # Add some command line arguments
 parser = argparse.ArgumentParser(description='Starts up the HummingBot.')
-parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token', required=True)
+parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token')
 parser.add_argument('-s', '--sounds', dest='sound_directory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
 
 args = parser.parse_args()
@@ -88,7 +88,7 @@ def index():
 client = HummingBot(args.sound_directory)
 loop = asyncio.get_event_loop()
 try:
-    loop.run_until_complete(client.start(args.token))
+    loop.run_until_complete(client.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
 except KeyboardInterrupt:
 	print('Logging out...')
 	loop.run_until_complete(client.logout())
