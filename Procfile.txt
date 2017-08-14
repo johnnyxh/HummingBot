@@ -1,0 +1,1 @@
+bot: python HummingBot.py -t $HUMMINGBOT_TOKEN
