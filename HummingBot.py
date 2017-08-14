@@ -2,6 +2,7 @@ import discord
 import argparse
 import asyncio
 import os.path
+import flask
 
 from utils.Playlist import Playlist
 
@@ -78,6 +79,11 @@ class HummingBot(discord.Client):
 					self.player.start();
 			except Exception as err:
 				print(err)
+
+app = flask.Flask(__name__)
+@app.route("/")
+def index():
+	return "Hello Heroku"
 
 client = HummingBot(args.sound_directory)
 loop = asyncio.get_event_loop()
