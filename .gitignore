@@ -2,3 +2,4 @@ sounds/
 oldbot.py
 opus.dll
 utils/__pycache__
+__pycache__
