@@ -1,2 +1,2 @@
-web: gunicorn manage:server
+web: gunicorn server:app
 worker: HummingBot.py
