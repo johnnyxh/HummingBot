@@ -1,1 +1,2 @@
-web: python -m flask run
+web: gunicorn manage:server
+worker: HummingBot.py
