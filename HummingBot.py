@@ -9,7 +9,7 @@ from utils.Playlist import Playlist
 parser = argparse.ArgumentParser(description='Starts up the HummingBot.')
 parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token', required=False)
 parser.add_argument('-s', '--sounds', dest='sound_directory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
-parser.add_argument('-o', '--opus', dest='opus_directory', action='store', help='Directory containing the libopus library', required=False, default='.')
+parser.add_argument('-o', '--opus', dest='opus_directory', action='store', help='Directory containing the libopus library', required=False)
 
 args = parser.parse_args()
 
