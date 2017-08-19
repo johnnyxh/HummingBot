@@ -1,24 +1,24 @@
 import discord
-#import argparse
+import argparse
 import asyncio
 import os
-import flask
 
 from utils.Playlist import Playlist
 
 # Add some command line arguments
-#parser = argparse.ArgumentParser(description='Starts up the HummingBot.')
-#parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token')
-#parser.add_argument('-s', '--sounds', dest='sound_directory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
+parser = argparse.ArgumentParser(description='Starts up the HummingBot.')
+parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token', required=False)
+parser.add_argument('-s', '--sounds', dest='sound_directory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
+parser.add_argument('-o', '--opus', dest='opus_directory', action='store', help='Directory containing the libopus library', required=False, default='.')
 
-#args = parser.parse_known_args()
+args = parser.parse_args()
 
 if not discord.opus.is_loaded():
 	# the 'opus' library here is opus.dll on windows
 	# or libopus.so on linux in the current directory
 	# you should replace this with the location the
 	# opus library is located in and with the proper filename.
-	discord.opus.load_opus('opus')
+	discord.opus.load_opus(args.opus_directory or os.environ['LIBOPUS_PATH'])
 
 class HummingBot(discord.Client):
 	def __init__(self, sound_directory):
@@ -80,15 +80,10 @@ class HummingBot(discord.Client):
 			except Exception as err:
 				print(err)
 
-app = flask.Flask(__name__)
-@app.route("/")
-def index():
-	return "Hello Heroku"
-
-client = HummingBot('sounds')
+client = HummingBot(args.sound_directory)
 loop = asyncio.get_event_loop()
 try:
-    loop.run_until_complete(client.start(os.environ['HUMMINGBOT_TOKEN']))
+    loop.run_until_complete(client.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
 except KeyboardInterrupt:
 	print('Logging out...')
 	loop.run_until_complete(client.logout())
