@@ -1,2 +1,1 @@
-web: gunicorn server:app
-worker: python HummingBot.py
+web: gunicorn --chdir bot --workers 1 HummingBot:app

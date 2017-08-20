@@ -2,8 +2,10 @@ import discord
 import argparse
 import asyncio
 import os
+import threading
 
 from utils.Playlist import Playlist
+from flask import Flask
 
 # Add some command line arguments
 parser = argparse.ArgumentParser(description='Starts up the HummingBot.')
@@ -11,7 +13,7 @@ parser.add_argument('-t', '--token', dest='token', action='store', help='Your AP
 parser.add_argument('-s', '--sounds', dest='sound_directory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
 parser.add_argument('-o', '--opus', dest='opus_directory', action='store', help='Directory containing the libopus library', required=False)
 
-args = parser.parse_args()
+args = parser.parse_known_args()[0]
 
 if not discord.opus.is_loaded():
 	# the 'opus' library here is opus.dll on windows
@@ -80,12 +82,23 @@ class HummingBot(discord.Client):
 			except Exception as err:
 				print(err)
 
-client = HummingBot(args.sound_directory)
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return "HummingBot is UP"
+
+def start_bot(loop):
+	asyncio.set_event_loop(loop)
+	client = HummingBot(args.sound_directory)
+	try:
+	    loop.run_until_complete(client.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
+	except KeyboardInterrupt:
+		print('Logging out...')
+		loop.run_until_complete(client.logout())
+	finally:
+		loop.close()
+
 loop = asyncio.get_event_loop()
-try:
-    loop.run_until_complete(client.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
-except KeyboardInterrupt:
-	print('Logging out...')
-	loop.run_until_complete(client.logout())
-finally:
-    loop.close()
+bot_thread = threading.Thread(target=start_bot,args=(loop,))
+bot_thread.start()
