@@ -1,0 +1,25 @@
+
+#!/usr/bin/env bash
+set -eo pipefail
+
+# The post_compile hook is run by heroku-buildpack-python
+
+echo "Running post_compile script"
+
+# Work around Heroku bug whereby pylibmc isn't available during
+# compile phase. See: https://github.com/heroku/heroku-buildpack-python/issues/57
+export MEMCACHE_SERVERS='' MEMCACHIER_SERVERS=''
+
+if [ -f bin/install_node ]; then
+    echo "-----> Running install_node"
+    bin/install_node
+    echo "-----> Finished install_node"
+
+    if [ -f bin/build_frontend ]; then
+        echo "-----> Running build_frontend"
+        bin/build_frontend
+        echo "-----> Finished build_frontend"
+    fi
+fi
+
+echo "Finished post_compile script"

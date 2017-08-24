@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+npm --prefix $BUILD_DIR/client install
+npm --prefix $BUILD_DIR/client run build
+mv $BUILD_DIR/client/build $BUILD_DIR/bot/static
