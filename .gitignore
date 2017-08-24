@@ -1,4 +1,6 @@
 bot/sounds
+bot/static
+client/build
 utils/__pycache__
 __pycache__
 client/node_modules

@@ -82,11 +82,15 @@ class HummingBot(discord.Client):
 			except Exception as err:
 				print(err)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='./static', static_url_path='')
 
 @app.route("/")
 def index():
-    return "HummingBot is UP"
+    return app.send_static_file('index.html')
+
+@app.route('/<path:path>')
+def static_file(path):
+    return app.send_static_file(path)
 
 def start_bot(loop):
 	asyncio.set_event_loop(loop)

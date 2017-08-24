@@ -1,1 +1,1 @@
-web: gunicorn --chdir bot --workers 1 HummingBot:app
+web: ./build.sh
