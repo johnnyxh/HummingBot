@@ -1,8 +1,9 @@
-import discord
-import argparse
 import asyncio
+import argparse
+import discord
 import os
 import threading
+import glob
 
 from utils.Playlist import Playlist
 from flask import Flask
@@ -33,12 +34,11 @@ class HummingBot(discord.Client):
 	def is_playing(self):
 		return self.player is not None and self.player.is_playing()
 
-	async def run_command(self, message, userCommand):
-		for module in self.modules:
-			for command in module.get_commands():
-				if command['name'] == userCommand:
-					await getattr(module, userCommand)(message)
-
+	def show_module_help(self, module):
+		help_msg = 'Available commands in the ' + type(module).__name__.lower() + ' module are: \n\n'
+		for command in module.get_commands():
+			help_msg += '\n'.join([command['name'], command['description'], command['use'], '\n'])
+		return help_msg
 
 	async def join_channel(self, message):
 		channel = message.author.voice.voice_channel
@@ -63,24 +63,31 @@ class HummingBot(discord.Client):
 			return
 		await self.execute_command(message)
 
+	#TODO: Refactor this ugly shit
 	async def execute_command(self, message):
 		if message.content.startswith('?'):
-			await self.run_command(message, message.content.split()[0][1:])
-			#TODO: Refactor play_voice to be in its own module so it doesn't always run
-			await self.play_voice(message, message.content.split()[0][1:])
+			for module in self.modules:
+				if type(module).__name__.lower() == message.content.split()[0][1:]:
+					userCommand = message.content.split()[1]
+					for command in module.get_commands():
+						if command['name'] == userCommand:
+							return await getattr(module, userCommand)(message)
+					return await self.send_message(message.channel, self.show_module_help(module))
+			return await self.play_voice(message, message.content.split()[0][1:])
 
 	async def play_voice(self, message, sound):
-		if not self.is_playing():
-			try:
-				await self.join_channel(message)
-				if os.path.isfile(os.path.join(self.sound_directory, sound + '.mp3')):
-					self.player = self.voice.create_ffmpeg_player(os.path.join(self.sound_directory, sound + '.mp3'))
+		soundname = os.path.join(self.sound_directory, sound)
+		filename = glob.glob(soundname + '.*')
+		if filename:
+			if not self.is_playing():
+				try:
+					await self.join_channel(message)
+					self.player = self.voice.create_ffmpeg_player(filename[0])
 					self.player.start();
-				elif os.path.isfile(os.path.join(self.sound_directory, sound + '.wav')):
-					self.player = self.voice.create_ffmpeg_player(os.path.join(self.sound_directory, sound + '.wav'))
-					self.player.start();
-			except Exception as err:
-				print(err)
+				except Exception as err:
+					print(err)
+		else:
+			await self.add_reaction(message, '❓')
 
 app = Flask(__name__, static_folder='./static', static_url_path='')
 

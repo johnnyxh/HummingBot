@@ -17,33 +17,39 @@ class Playlist:
 	def get_commands(self):
 		commands = [
 			{
-				'name': 'play',
-				'description': 'Add a youtube video to the current playlist'
+				'name': 'add',
+				'description': 'Add a song to the current playlist',
+				'use': '?playlist add [youtube_url]'
 			},
 			{
 				'name': 'pause',
-				'description': 'Pause the current video'
+				'description': 'Pause the current song',
+				'use': '?playlist pause'	
 			},
 			{
 				'name': 'resume',
-				'description': 'Resume the current video'
+				'description': 'Resume the current song',
+				'use': '?playlist resume'
 			},
 			{
-				'name': 'stop',
-				'description': 'Stop the entire playlist'
+				'name': 'clear',
+				'description': 'Clear the entire playlist',
+				'use': '?playlist clear'
 			},
 			{
 				'name': 'skip',
-				'description': 'Skip to the next video on the playlist'
+				'description': 'Skip to the next song on the playlist',
+				'use': '?playlist skip'
 			},
 			{
 				'name': 'playing',
-				'description': 'Get information on the curent song'
+				'description': 'Get information on the current songs in the playlist',
+				'use': '?playlist playing'
 			}
 		]
 		return commands
 
-	async def play(self, message):
+	async def add(self, message):
 		try:
 			await self.bot.join_channel(message)
 
@@ -56,12 +62,12 @@ class Playlist:
 				'verbose': True
 			}
 			with youtube_dl.YoutubeDL(opts) as ydl:
-				func = functools.partial(ydl.extract_info, message.content.split()[1], download=False)
+				func = functools.partial(ydl.extract_info, message.content.split()[2], download=False)
 				info = await self.bot.loop.run_in_executor(None, func)
 				if 'entries' in info:
 					info = info['entries'][0]
 
-			new_song = SongEntry(message, message.content.split()[1], info)
+			new_song = SongEntry(message, message.content.split()[2], info)
 			await self.songs.put(new_song)
 			await self.bot.add_reaction(message, '🐦')
 
@@ -73,17 +79,33 @@ class Playlist:
 			print(err)
 
 	async def pause(self, message):
-		self.bot.player.pause()
+		if message.author.voice_channel is not None:
+			self.bot.player.pause()
+			await self.bot.add_reaction(message, '🐦')
+		else:
+			await self.bot.send_message(message.channel, 'You should get in a voice channel first')
 
 	async def skip(self, message):
-		self.bot.player.stop()
+		if message.author.voice_channel is not None:
+			self.bot.player.stop()
+			await self.bot.add_reaction(message, '🐦')
+		else:
+			await self.bot.send_message(message.channel, 'You should get in a voice channel first')
 
-	async def stop(self, message):
-		self.songs = asyncio.Queue()
-		self.bot.player.stop()
+	async def clear(self, message):
+		if message.author.voice_channel is not None:
+			self.songs = asyncio.Queue()
+			self.bot.player.stop()
+			await self.bot.add_reaction(message, '🐦')
+		else:
+			await self.bot.send_message(message.channel, 'You should get in a voice channel first')
 
 	async def resume(self, message):
-		self.bot.player.resume()
+		if message.author.voice_channel is not None:
+			self.bot.player.resume()
+			await self.bot.add_reaction(message, '🐦')
+		else:
+			await self.bot.send_message(message.channel, 'You should get in a voice channel first')
 
 	async def playing(self, message):
 		song_list = list(self.songs._queue)
