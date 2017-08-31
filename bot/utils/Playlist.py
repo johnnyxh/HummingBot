@@ -132,6 +132,12 @@ class Playlist:
 			except:
 				return
 
+	async def on_voice_state_update(self, before, after):
+		if self.bot.voice is not None and len(self.bot.voice.channel.voice_members) <= 1:
+			self.songs = asyncio.Queue()
+			self.bot.player.stop()
+			await self.bot.voice.disconnect()
+
 	def finished(self):
 		self.bot.loop.call_soon_threadsafe(self.play_next_song.set)
 

@@ -63,6 +63,14 @@ class HummingBot(discord.Client):
 			return
 		await self.execute_command(message)
 
+	#TODO: Possibly rethink this approach
+	async def on_voice_state_update(self, before, after):
+		try:
+			for module in self.modules:
+				await getattr(module, 'on_voice_state_update')(before, after)
+		except Exception as err:
+			print(err)
+
 	#TODO: Refactor this ugly shit
 	async def execute_command(self, message):
 		if message.content.startswith('?'):
