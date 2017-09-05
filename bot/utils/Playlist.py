@@ -127,9 +127,9 @@ class Playlist:
 		if (len(song_list) - 2) > 0: await self.bot.send_message(message.channel, 'There are ' + str(len(song_list) - 2) + ' other songs in the queue')
 
 		for song in song_list[1::-1]:
-			await self.bot.send_message(message.channel, embed=self._songEmbed(song, 'Coming up'))
+			await self.bot.send_message(message.channel, embed=song.get_embed_info('Coming up'))
 
-		await self.bot.send_message(message.channel, embed=self._songEmbed(self.current_song, 'Now Playing'))
+		await self.bot.send_message(message.channel, embed=self.current_song.get_embed_info('Now Playing - %s' % self.current_song.get_current_timestamp()))
 
 	async def on_voice_state_update(self, before, after):
 		if self.bot.voice is not None and len(self.bot.voice.channel.voice_members) <= 1:
@@ -149,6 +149,7 @@ class Playlist:
 					print('Playing: ' + self.current_song.title)
 					self.bot.player.volume = 0.45
 					self.bot.player.start()
+					self.current_song.song_started()
 					await self.play_next_song.wait()
 				except:
 					return
@@ -180,9 +181,3 @@ class Playlist:
 
 	def _finished(self):
 		self.bot.loop.call_soon_threadsafe(self.play_next_song.set)
-
-	def _songEmbed(self, song, description):
-		#TODO: Have thumbnail logic in SongEntry
-		song_embed = discord.Embed(title=song.title, description=description, colour=0xDEADBF)
-		song_embed.set_thumbnail(url='https://img.youtube.com/vi/%s/0.jpg' % song.id)
-		return song_embed
