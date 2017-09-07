@@ -9,7 +9,7 @@ class SongEntry:
 		self.uploader = info.get('uploader')
 		self.title = info.get('title')
 		self.id = info.get('id')
-		self.play_start = None
+		self.play_start = 0
 
 	def song_started(self):
 		self.play_start = time.time()

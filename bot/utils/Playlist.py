@@ -6,7 +6,7 @@ import tempfile
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
 
-from .SongEntry import SongEntry
+from utils.SongEntry import SongEntry
 
 class Playlist:
 	YOUTUBE_OPTS = {
