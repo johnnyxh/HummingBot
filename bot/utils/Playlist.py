@@ -1,8 +1,6 @@
 import asyncio
-import discord
 import youtube_dl
 import functools
-import tempfile
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
 
@@ -13,6 +11,7 @@ class Playlist:
 		'format': 'webm[abr>0]/bestaudio/best',
 		'prefer_ffmpeg': True,
 		'verbose': True,
+		'playlistrandom': True
 	}
 
 	PLAYLIST_DOWNLOAD_RANGE = 5
@@ -49,11 +48,6 @@ class Playlist:
 				'name': 'skip',
 				'description': 'Skip to the next song on the playlist',
 				'use': '?playlist skip'
-			},
-			{
-				'name': 'shuffle',
-				'description': 'Shuffle the order of the playlist',
-				'use': '?playlist shuffle'
 			},
 			{
 				'name': 'playing',
@@ -101,35 +95,33 @@ class Playlist:
 
 	async def pause(self, message):
 		if await self._user_in_voice_command(message):
-			self.bot.player.pause()
+			if self.bot.player is not None: self.bot.player.pause()
 
 	async def skip(self, message):
 		if await self._user_in_voice_command(message):
-			self.bot.player.stop()
-
-	async def shuffle(self, message):
-		#TODO: Get this done
-		if await self._user_in_voice_command(message):
-			await self.bot.send_message(message.channel, 'Maybe someday')
+			if self.bot.player is not None: self.bot.player.stop()
 
 	async def clear(self, message):
 		if await self._user_in_voice_command(message):
-			self.songs = asyncio.Queue()
-			self.bot.player.stop()
+			if self.bot.player is not None:
+				self.songs = asyncio.Queue()
+				self.bot.player.stop()
 
 	async def resume(self, message):
 		if await self._user_in_voice_command(message):
-			self.bot.player.resume()
+			if self.bot.player is not None: self.bot.player.resume()
 
 	async def playing(self, message):
 		song_list = list(self.songs._queue)
+
+		if self.songs.empty() and self.current_song is None: return await self.bot.send_message(message.channel, 'There are no songs in the queue')
 
 		if (len(song_list) - 2) > 0: await self.bot.send_message(message.channel, 'There are ' + str(len(song_list) - 2) + ' other songs in the queue')
 
 		for song in song_list[1::-1]:
 			await self.bot.send_message(message.channel, embed=song.get_embed_info('Coming up'))
 
-		await self.bot.send_message(message.channel, embed=self.current_song.get_embed_info('Now Playing - %s' % self.current_song.get_current_timestamp()))
+		return await self.bot.send_message(message.channel, embed=self.current_song.get_embed_info('Now Playing - %s' % self.current_song.get_current_timestamp()))
 
 	async def on_voice_state_update(self, before, after):
 		if self.bot.voice is not None and len(self.bot.voice.channel.voice_members) <= 1:
