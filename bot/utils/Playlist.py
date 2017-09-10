@@ -11,7 +11,8 @@ class Playlist:
 		'format': 'webm[abr>0]/bestaudio/best',
 		'prefer_ffmpeg': True,
 		'verbose': True,
-		'playlistrandom': True
+		'playlistrandom': True,
+		'ignoreerrors': True
 	}
 
 	PLAYLIST_DOWNLOAD_RANGE = 5
@@ -78,8 +79,9 @@ class Playlist:
 					info = await self._get_video_info(video_url, opts)
 					if 'entries' in info:
 						for entry in info['entries']:
-							new_song = SongEntry(message, entry)
-							await self.songs.put(new_song)
+							if entry is not None:
+								new_song = SongEntry(message, entry)
+								await self.songs.put(new_song)
 						await self.bot.add_reaction(message, '🐦')
 					asyncio.ensure_future(self._play_next())
 					lower_bound = upper_bound+1
