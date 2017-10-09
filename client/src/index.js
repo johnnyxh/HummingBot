@@ -9,8 +9,8 @@ import App from './App';
 let store = createStore(combineReducers({botReducer}), applyMiddleware(thunkMiddleware));
 
 render(
-	<Provider store={store}>
-		<App />
-	</Provider>,
-	document.getElementById('root')
+    <Provider store={store}>
+        <App />
+    </Provider>,
+    document.getElementById('root')
 );
