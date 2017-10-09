@@ -42,7 +42,7 @@ class HealthHandler(tornado.web.RequestHandler):
 def make_app():
 	return tornado.web.Application([
 		(r"/api/health", HealthHandler),
-		(r"/(.*)", tornado.web.StaticFileHandler, {'path': './static', 'default_filename': 'index.html'}),
+		(r"/(.*)", tornado.web.StaticFileHandler, {'path': os.path.join(os.path.dirname(__file__), 'static'), 'default_filename': 'index.html'}),
 	])
 
 if __name__ == "__main__":
