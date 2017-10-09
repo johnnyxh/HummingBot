@@ -1,28 +1,15 @@
-import asyncio
-import argparse
 import discord
 import os
-import threading
 import glob
 
 from utils.Playlist import Playlist
-from flask import Flask
-from flask import jsonify
-
-# Add some command line arguments
-parser = argparse.ArgumentParser(description='Starts up the HummingBot.')
-parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token', required=False)
-parser.add_argument('-s', '--sounds', dest='sound_directory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
-parser.add_argument('-o', '--opus', dest='opus_directory', action='store', help='Directory containing the libopus library', required=False)
-
-args = parser.parse_known_args()[0]
 
 if not discord.opus.is_loaded():
 	# the 'opus' library here is opus.dll on windows
 	# or libopus.so on linux in the current directory
 	# you should replace this with the location the
 	# opus library is located in and with the proper filename.
-	discord.opus.load_opus(args.opus_directory or os.environ['LIBOPUS_PATH'])
+	discord.opus.load_opus(os.environ['LIBOPUS_PATH'])
 
 class HummingBot(discord.Client):
 	def __init__(self, sound_directory):
@@ -97,40 +84,3 @@ class HummingBot(discord.Client):
 					print(err)
 		else:
 			await self.add_reaction(message, '❓')
-
-client = None
-
-def start_bot(loop):
-	asyncio.set_event_loop(loop)
-	global client
-	client = HummingBot(args.sound_directory)
-	try:
-	    loop.run_until_complete(client.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
-	except KeyboardInterrupt:
-		print('Logging out...')
-		loop.run_until_complete(client.logout())
-	finally:
-		loop.close()
-
-loop = asyncio.get_event_loop()
-bot_thread = threading.Thread(target=start_bot,args=(loop,))
-bot_thread.start()
-
-app = Flask(__name__, static_folder='./static', static_url_path='')
-
-@app.route('/')
-def index():
-    return app.send_static_file('index.html')
-
-@app.route('/api/health')
-def health():
-	status = 'DOWN'
-	if bot_thread.is_alive and client.is_logged_in:
-		status = 'UP'
-	return jsonify({'status': status})
-
-@app.route('/<path:path>')
-def static_file(path):
-    return app.send_static_file(path)
-
-app.run()
