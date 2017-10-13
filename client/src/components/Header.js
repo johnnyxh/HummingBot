@@ -25,7 +25,7 @@ export default class Header extends Component {
 							</Col>
 							<Col xs="0" md="10" />
 							<Col className="md-bottom-right-align" xs="12" lg="2">
-								<Button color="primary" size="lg" block>Restart Bot</Button>
+								<Button color="primary" size="lg" block onClick={this.props.restartBot}>Restart Bot</Button>
 							</Col>
 						</Col>
 					</Row>
