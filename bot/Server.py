@@ -20,7 +20,6 @@ class HealthHandler(tornado.web.RequestHandler):
 class RestartHandler(tornado.web.RequestHandler):
 	async def get(self):
 		global client
-		global args
 		loop = asyncio.get_event_loop()
 		await client.logout()
 		client = HummingBot('sounds')
