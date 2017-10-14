@@ -7,7 +7,9 @@ import {
 
 export function botReducer(
     state = {
-        health: 'Unknown',
+        status: 'Unknown',
+        servers: ['Unknown'],
+        uptime: 'Unknown',
         pendingHealth: false,
         pendingRestart: false
     },
@@ -15,10 +17,7 @@ export function botReducer(
 ) {
     switch (action.type) {
         case HEALTH_COMPLETE:
-            return Object.assign({}, state, {
-                health: action.payload,
-                pendingHealth: false
-            });
+            return Object.assign({}, state, action.payload, {pendingHealth: false});
         case HEALTH_REQUESTED:
             return Object.assign({}, state, {
                 pendingHealth: true

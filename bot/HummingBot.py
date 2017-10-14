@@ -1,6 +1,7 @@
 import discord
 import os
 import glob
+import time
 
 from utils.Playlist import Playlist
 
@@ -13,11 +14,21 @@ if not discord.opus.is_loaded():
 
 class HummingBot(discord.Client):
 	def __init__(self, sound_directory):
-		   super().__init__()
-		   self.sound_directory = sound_directory
-		   self.player = None
-		   self.voice = None
-		   self.modules = [Playlist(self)]
+	   super().__init__()
+	   self.sound_directory = sound_directory
+	   self.health= 'STARTING'
+	   self.player = None
+	   self.voice = None
+	   self.start_timestamp = None
+	   self.modules = [Playlist(self)]
+
+	def uptime(self):
+		if self.start_timestamp is None:
+			return "00h:00m:00.00s"
+		current_time = time.time()
+		hours, rem = divmod(current_time-self.start_timestamp, 3600)
+		minutes, seconds = divmod(rem, 60)
+		return "{:0>2}h:{:0>2}m:{:0>2}s".format(int(hours),int(minutes),int(seconds))
 
 	def is_playing(self):
 		return self.player is not None and self.player.is_playing()
@@ -41,10 +52,17 @@ class HummingBot(discord.Client):
 
 
 	async def on_ready(self):
+		self.start_timestamp = time.time()
+		self.health = 'UP'
+
 		print('Logging in as:')
 		print(self.user.name)
 		print(self.user.id)
 		print('---------------')
+
+	async def on_error(self, e):
+		self.health = 'RISKY BUSINESS'
+		print(e)
 
 	async def on_message(self, message):
 		if message.author == self.user:

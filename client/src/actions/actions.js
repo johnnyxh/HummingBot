@@ -37,7 +37,7 @@ export function updateHealth() {
 
         dispatch({
             type: HEALTH_COMPLETE,
-            payload: responseBody.status
+            payload: responseBody
         });
     };
 };
@@ -63,5 +63,8 @@ export function restartBot() {
             type: RESTART_COMPLETE,
             payload: responseBody.status
         });
+
+        // Better way?
+        dispatch(updateHealth());
     };
 };

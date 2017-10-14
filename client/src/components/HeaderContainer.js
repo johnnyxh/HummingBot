@@ -4,7 +4,10 @@ import Header from './Header';
 
 const mapStateToProps = (state) => {
     return {
-        health: state.botReducer.health
+        status: state.botReducer.status,
+        server: state.botReducer.servers[0],
+        uptime: state.botReducer.uptime,
+        pendingRestart: state.botReducer.pendingRestart
     };
 };
 
@@ -15,6 +18,7 @@ const mapDispatchToProps = (dispatch) => {
         },
         restartBot: () => {
         	dispatch(restartBot())
+        	dispatch(updateHealth())
         }
     };
 };

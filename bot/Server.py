@@ -7,29 +7,41 @@ import tornado.web
 from tornado.platform.asyncio import AsyncIOMainLoop
 from HummingBot import HummingBot
 
-client = None
 args = None
 
 class HealthHandler(tornado.web.RequestHandler):
+	def initialize(self, bot):
+		self.bot = bot
+
 	def get(self):
 		status = 'DOWN'
-		if client.is_logged_in:
-			status = 'UP'
-		self.write({'status': status})
+		servers = []
+		if self.bot.is_logged_in and not self.bot.is_closed:
+			status = self.bot.health
+			for server in self.bot.servers:
+				servers.append(server.name)
+		self.write({'status': status, 'servers': servers, 'uptime': self.bot.uptime()})
 
 class RestartHandler(tornado.web.RequestHandler):
+	def initialize(self, bot):
+		self.bot = bot
+
 	async def get(self):
-		global client
-		loop = asyncio.get_event_loop()
-		await client.logout()
-		client = HummingBot('sounds')
-		loop.create_task(client.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
+		try:
+			loop = asyncio.get_event_loop()
+			await self.bot.logout()
+			self.bot.__init__(args.sound_directory)
+			loop.create_task(bot.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
+			await bot.wait_until_ready()
+			self.write({'status': 'success'})
+		except Exception as err:
+			print(err)
+			self.write({'status': 'failure'})
 
-
-def make_server():
+def make_server(bot):
 	return tornado.web.Application([
-		(r"/api/health", HealthHandler),
-		(r"/api/restart", RestartHandler),
+		(r"/api/health", HealthHandler, dict(bot=bot)),
+		(r"/api/restart", RestartHandler, dict(bot=bot)),
 		(r"/(.*)", tornado.web.StaticFileHandler, {'path': os.path.join(os.path.dirname(__file__), 'static'), 'default_filename': 'index.html'}),
 	])
 
@@ -43,12 +55,12 @@ if __name__ == "__main__":
 
 	loop = asyncio.get_event_loop()
 
+	bot = HummingBot(args.sound_directory)
+	loop.create_task(bot.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
+
 	AsyncIOMainLoop().install()
 
-	client = HummingBot(args.sound_directory)
-	loop.create_task(client.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
-
-	app = make_server()
+	app = make_server(bot)
 	app.listen(args.port or os.environ['PORT'])
 
-	asyncio.get_event_loop().run_forever()
+	loop.run_forever()
