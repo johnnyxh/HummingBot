@@ -49,7 +49,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Starts up the HummingBot + Server.')
 	parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token', required=False)
 	parser.add_argument('-s', '--sounds', dest='sound_directory', metavar='DIRECTORY', action='store', help='Directory containing sound files for the bot to play', required=False, default='sounds')
-	parser.add_argument('-p', '--port', dest='port', action='store', help='Port to run the webserver on', required=False, default=8888)
+	parser.add_argument('-p', '--port', dest='port', action='store', help='Port to run the webserver on', required=False)
 
 	args = parser.parse_known_args()[0]
 
