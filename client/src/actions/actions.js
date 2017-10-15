@@ -6,6 +6,15 @@ export const HEALTH_COMPLETE = 'HEALTH_COMPLETE';
 export const RESTART_REQUESTED = 'RESTART_REQUESTED';
 export const RESTART_COMPLETE = 'RESTART_COMPLETE';
 
+export const NAVIGATION_CHANGED = 'NAVIGATION_CHANGED';
+
+export function navigationChange(view) {
+    return {
+        type: NAVIGATION_CHANGED,
+        payload: view
+    };
+};
+
 export function requestHealth() {
     return {
         type: HEALTH_REQUESTED
@@ -61,10 +70,7 @@ export function restartBot() {
 
         dispatch({
             type: RESTART_COMPLETE,
-            payload: responseBody.status
+            payload: responseBody
         });
-
-        // Better way?
-        dispatch(updateHealth());
     };
 };

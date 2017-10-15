@@ -19,7 +19,7 @@ export default class Header extends Component {
 			<Card>
 				<CardBody>
 					<Row>
-						<Col xs="12" lg="3"><img height="100px" className="rounded mx-auto d-block" src={healthIcon} /></Col>
+						<Col xs="12" lg="3"><img alt='' height="100px" className="rounded mx-auto d-block" src={healthIcon} /></Col>
 						<Col xs="12" lg="9">
 							<Row>
 								<Col xs="12" md="4">

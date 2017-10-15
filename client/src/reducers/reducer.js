@@ -2,7 +2,8 @@ import {
     HEALTH_REQUESTED,
     HEALTH_COMPLETE,
     RESTART_REQUESTED,
-    RESTART_COMPLETE
+    RESTART_COMPLETE,
+    NAVIGATION_CHANGED
 } from '../actions/actions';
 
 export function botReducer(
@@ -29,6 +30,22 @@ export function botReducer(
         case RESTART_REQUESTED:
             return Object.assign({}, state, {
                 pendingRestart: true
+            });
+        default:
+            return state;
+    }
+};
+
+export function navigationReducer(
+    state = {
+        currentView: 'Playlist'
+    },
+    action
+) {
+    switch (action.type) {
+        case NAVIGATION_CHANGED:
+            return Object.assign({}, state, {
+                currentView: action.payload
             });
         default:
             return state;
