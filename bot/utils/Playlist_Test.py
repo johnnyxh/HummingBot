@@ -1,5 +1,6 @@
 import asyncio
 import unittest
+from collections import deque
 from unittest.mock import patch, MagicMock
 
 from utils.Playlist import Playlist
@@ -13,7 +14,6 @@ class PlaylistTest(unittest.TestCase):
 	def setUp(self):
 		self.bot_mock = MagicMock()
 		self.message_mock = MagicMock()
-		self.song_queue_mock = MagicMock()
 		self.message_mock.author.voice_channel
 
 	@patch.object(Playlist, '_user_in_voice_command', new_callable=AsyncMock)
@@ -57,28 +57,28 @@ class PlaylistTest(unittest.TestCase):
 		self.assertFalse(self.bot_mock.player.stop.called)
 
 	@patch.object(Playlist, '_user_in_voice_command', new_callable=AsyncMock)
-	@patch('utils.Playlist.asyncio')
-	def test_clear(self, asyncio_mock, user_in_voice_mock):
+	def test_clear(self, user_in_voice_mock):
 		playlist = Playlist(self.bot_mock)
+		playlist.songs = MagicMock()
 		user_in_voice_mock.return_value = True
 
 		loop = asyncio.get_event_loop()
 		loop.run_until_complete(playlist.clear(self.message_mock))
 
 		self.assertTrue(self.bot_mock.player.stop.called)
-		self.assertEqual(asyncio_mock.Queue.call_count, 2)
+		self.assertEqual(playlist.songs.clear.call_count, 1)
 
 	@patch.object(Playlist, '_user_in_voice_command', new_callable=AsyncMock)
-	@patch('utils.Playlist.asyncio')
-	def test_clear_not_in_channel(self, asyncio_mock, user_in_voice_mock):
+	def test_clear_not_in_channel(self, user_in_voice_mock):
 		playlist = Playlist(self.bot_mock)
+		playlist.songs = MagicMock()
 		user_in_voice_mock.return_value = False
 
 		loop = asyncio.get_event_loop()
 		loop.run_until_complete(playlist.clear(self.message_mock))
 
 		self.assertFalse(self.bot_mock.player.stop.called)
-		self.assertEqual(asyncio_mock.Queue.call_count, 1)
+		self.assertEqual(playlist.songs.clear.call_count, 0)
 
 	@patch.object(Playlist, '_user_in_voice_command', new_callable=AsyncMock)
 	def test_resume(self, user_in_voice_mock):
@@ -100,9 +100,7 @@ class PlaylistTest(unittest.TestCase):
 
 		self.assertFalse(self.bot_mock.player.resume.called)
 
-	@patch('utils.Playlist.asyncio')
-	def test_playing_empty_queue(self, asyncio_mock):
-		asyncio_mock.Queue._songs = []
+	def test_playing_empty_queue(self):
 		self.message_mock.channel = 'SomeChannel'
 		self.bot_mock.send_message = AsyncMock()
 		playlist = Playlist(self.bot_mock)
@@ -113,9 +111,7 @@ class PlaylistTest(unittest.TestCase):
 		self.assertEqual(self.bot_mock.send_message.call_args, (('SomeChannel', 'There are no songs in the queue'),))
 
 	@patch('utils.Playlist.SongEntry')
-	@patch('utils.Playlist.asyncio')
-	def test_playing_empty_queue_song_playing(self, asyncio_mock, song_entry_mock):
-		asyncio_mock.Queue._songs = []
+	def test_playing_empty_queue_song_playing(self, song_entry_mock):
 		self.message_mock.channel = 'SomeChannel'
 		self.bot_mock.send_message = AsyncMock()
 		playlist = Playlist(self.bot_mock)
@@ -131,8 +127,7 @@ class PlaylistTest(unittest.TestCase):
 		self.assertEqual(args, ('SomeChannel',))
 		self.assertEqual(kwargs, ({'embed': song_embed_mock}),)
 
-	@patch('utils.Playlist.asyncio')
-	def test_playing_two_queue_song_playing(self, asyncio_mock):
+	def test_playing_two_queue_song_playing(self):
 		song1 = MagicMock()
 		song_embed_mock1 = {'title': 'fakeTitle', 'description': 'some fake description'}
 		song1.get_embed_info.return_value = song_embed_mock1
@@ -145,12 +140,10 @@ class PlaylistTest(unittest.TestCase):
 		song_embed_mock3 = {'title': 'oneMoreTitle', 'description': 'the last fake description'}
 		song3.get_embed_info.return_value = song_embed_mock3
 
-		song_queue = MagicMock()
-		song_queue._queue = [song2, song3]
-		asyncio_mock.Queue.return_value = song_queue
 		self.message_mock.channel = 'SomeChannel'
 		self.bot_mock.send_message = AsyncMock()
 		playlist = Playlist(self.bot_mock)
+		playlist.songs = deque([song3, song2])
 		playlist.current_song = song1
 
 		loop = asyncio.get_event_loop()
@@ -170,8 +163,7 @@ class PlaylistTest(unittest.TestCase):
 		self.assertEqual(args, ('SomeChannel',))
 		self.assertEqual(kwargs, ({'embed': song_embed_mock3}),)
 
-	@patch('utils.Playlist.asyncio')
-	def test_playing_four_queue_song_playing(self, asyncio_mock):
+	def test_playing_four_queue_song_playing(self):
 		song1 = MagicMock()
 		song_embed_mock1 = {'title': 'fakeTitle', 'description': 'some fake description'}
 		song1.get_embed_info.return_value = song_embed_mock1
@@ -184,12 +176,10 @@ class PlaylistTest(unittest.TestCase):
 		song_embed_mock3 = {'title': 'oneMoreTitle', 'description': 'the last fake description'}
 		song3.get_embed_info.return_value = song_embed_mock3
 
-		song_queue = MagicMock()
-		song_queue._queue = [song2, song3, song3, song3, song3]
-		asyncio_mock.Queue.return_value = song_queue
 		self.message_mock.channel = 'SomeChannel'
 		self.bot_mock.send_message = AsyncMock()
 		playlist = Playlist(self.bot_mock)
+		playlist.songs = deque([song3, song3, song3, song3, song2])
 		playlist.current_song = song1
 
 		loop = asyncio.get_event_loop()
@@ -211,6 +201,48 @@ class PlaylistTest(unittest.TestCase):
 
 		args, kwargs = self.bot_mock.send_message.call_args_list[0]
 		self.assertEqual(args, ('SomeChannel', 'There are 3 other songs in the queue',))
+
+	@patch.object(Playlist, '_user_in_voice_command', new_callable=AsyncMock)
+	def test_repeat_not_in_channel(self, user_in_voice_mock):
+		playlist = Playlist(self.bot_mock)
+		user_in_voice_mock.return_value = False
+
+		loop = asyncio.get_event_loop()
+		loop.run_until_complete(playlist.repeat(self.message_mock))
+
+		self.assertFalse(self.bot_mock.player.append.called)
+
+	@patch.object(Playlist, '_user_in_voice_command', new_callable=AsyncMock)
+	def test_repeat_no_song_playing(self, user_in_voice_mock):
+		self.message_mock.channel = 'SomeChannel'
+		self.bot_mock.send_message = AsyncMock()
+		playlist = Playlist(self.bot_mock)
+		user_in_voice_mock.return_value = True
+
+		loop = asyncio.get_event_loop()
+		loop.run_until_complete(playlist.repeat(self.message_mock))
+
+		self.assertFalse(self.bot_mock.player.append.called)
+		
+		args, kwargs = self.bot_mock.send_message.call_args
+		self.assertEqual(args, ('SomeChannel', 'There is no song currently playing',))
+
+	@patch.object(Playlist, '_user_in_voice_command', new_callable=AsyncMock)
+	def test_repeat_song_playing(self, user_in_voice_mock):
+		song1 = {'title': 'someSong', 'whatever': 'fake song object'}
+		song2 = {'title': 'otherSong', 'whatever': 'fake song object number 2'}
+		song3 = {'title': 'finalSong', 'whatever': 'fake song object numero 3'}
+
+		playlist = Playlist(self.bot_mock)
+		playlist.current_song = song1
+		playlist.songs = deque([song3, song2])
+		user_in_voice_mock.return_value = True
+
+		loop = asyncio.get_event_loop()
+		loop.run_until_complete(playlist.repeat(self.message_mock))
+
+		self.assertEqual(playlist.songs[len(playlist.songs)-1], song1)
+
 
 if __name__ == '__main__':
 	unittest.main()

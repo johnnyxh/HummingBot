@@ -1,6 +1,7 @@
 import asyncio
 import youtube_dl
 import functools
+from collections import deque
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
 
@@ -15,11 +16,12 @@ class Playlist:
 		'ignoreerrors': True
 	}
 
+	PLAYLIST_PLAYING_RANGE = 2
 	PLAYLIST_DOWNLOAD_RANGE = 5
 
 	def __init__(self, bot):
 		self.bot = bot
-		self.songs = asyncio.Queue()
+		self.songs = deque()
 		self.play_next_song = asyncio.Event()
 		self.current_song = None
 
@@ -29,6 +31,11 @@ class Playlist:
 				'name': 'add',
 				'description': 'Add a song to the current playlist',
 				'use': '?playlist add [youtube_url]'
+			},
+			{
+				'name': 'repeat',
+				'description': 'Add the current song to the front of queue',
+				'use': '?playlist repeat'
 			},
 			{
 				'name': 'pause',
@@ -81,19 +88,24 @@ class Playlist:
 						for entry in info['entries']:
 							if entry is not None:
 								new_song = SongEntry(message, entry)
-								await self.songs.put(new_song)
+								self.songs.appendleft(new_song)
 						await self.bot.add_reaction(message, '🐦')
 					asyncio.ensure_future(self._play_next())
 					lower_bound = upper_bound+1
 			else:
 				info = await self._get_video_info(video_url, self.YOUTUBE_OPTS)
 				new_song = SongEntry(message, info)
-				await self.songs.put(new_song)
+				self.songs.appendleft(new_song)
 				await self.bot.add_reaction(message, '🐦')
 				await self._play_next()
 
 		except Exception as err:
-			print(err)
+			raise(err)
+
+	async def repeat(self, message):
+		if await self._user_in_voice_command(message):
+			if self.current_song is None: return await self.bot.send_message(message.channel, 'There is no song currently playing')
+			self.songs.append(self.current_song)
 
 	async def pause(self, message):
 		if await self._user_in_voice_command(message):
@@ -106,7 +118,7 @@ class Playlist:
 	async def clear(self, message):
 		if await self._user_in_voice_command(message):
 			if self.bot.player is not None:
-				self.songs = asyncio.Queue()
+				self.songs.clear()
 				self.bot.player.stop()
 
 	async def resume(self, message):
@@ -114,20 +126,20 @@ class Playlist:
 			if self.bot.player is not None: self.bot.player.resume()
 
 	async def playing(self, message):
-		song_list = list(self.songs._queue)
+		song_list = list(self.songs)
 
-		if self.songs.empty() and self.current_song is None: return await self.bot.send_message(message.channel, 'There are no songs in the queue')
+		if len(song_list) <= 0 and self.current_song is None: return await self.bot.send_message(message.channel, 'There are no songs in the queue')
 
-		if (len(song_list) - 2) > 0: await self.bot.send_message(message.channel, 'There are ' + str(len(song_list) - 2) + ' other songs in the queue')
+		if (len(song_list) - self.PLAYLIST_PLAYING_RANGE) > 0: await self.bot.send_message(message.channel, 'There are ' + str(len(song_list) - self.PLAYLIST_PLAYING_RANGE) + ' other songs in the queue')
 
-		for song in song_list[1::-1]:
+		for song in song_list[len(song_list)-self.PLAYLIST_PLAYING_RANGE:]:
 			await self.bot.send_message(message.channel, embed=song.get_embed_info('Coming up'))
 
 		return await self.bot.send_message(message.channel, embed=self.current_song.get_embed_info('Now Playing - %s' % self.current_song.get_current_timestamp()))
 
 	async def on_voice_state_update(self, before, after):
 		if self.bot.voice is not None and len(self.bot.voice.channel.voice_members) <= 1:
-			self.songs = asyncio.Queue()
+			self.songs.clear()
 			self.bot.player.stop()
 			await self.bot.voice.disconnect()
 
@@ -137,7 +149,7 @@ class Playlist:
 				self.play_next_song.clear()
 				self.current_song = None
 				try:
-					self.current_song = self.songs.get_nowait()
+					self.current_song = self.songs.pop()
 					before_options = '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2'
 					self.bot.player = self.bot.voice.create_ffmpeg_player(self.current_song.url, before_options=before_options, after=self._finished)
 					print('Playing: ' + self.current_song.title)
@@ -145,7 +157,7 @@ class Playlist:
 					self.bot.player.start()
 					self.current_song.song_started()
 					await self.play_next_song.wait()
-				except:
+				except :
 					return
 
 	async def _user_in_voice_command(self, message):
