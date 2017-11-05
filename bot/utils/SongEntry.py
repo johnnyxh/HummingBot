@@ -2,9 +2,8 @@ import discord
 import time
 
 class SongEntry:
-	def __init__(self, message, info):
-		self.requester = message.author
-		self.channel = message.channel
+	def __init__(self, requester, info):
+		self.requester = requester
 		self.url = info.get('url')
 		self.uploader = info.get('uploader')
 		self.title = info.get('title')

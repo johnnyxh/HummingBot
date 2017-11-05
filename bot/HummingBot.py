@@ -2,6 +2,7 @@ import discord
 import os
 import glob
 import time
+import sys
 
 from utils.Playlist import Playlist
 
@@ -60,9 +61,9 @@ class HummingBot(discord.Client):
 		print(self.user.id)
 		print('---------------')
 
-	async def on_error(self, e):
+	async def on_error(self, event, *args, **kwargs):
 		self.health = 'RISKY BUSINESS'
-		print(e)
+		print(sys.exc_info())
 
 	async def on_message(self, message):
 		if message.author == self.user:

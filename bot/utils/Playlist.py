@@ -1,6 +1,9 @@
+import aiohttp
 import asyncio
+import async_timeout
 import youtube_dl
 import functools
+import os
 from collections import deque
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -24,6 +27,7 @@ class Playlist:
 		self.songs = deque()
 		self.play_next_song = asyncio.Event()
 		self.current_song = None
+		self.is_autopilot = False
 
 	def get_commands(self):
 		commands = [
@@ -31,6 +35,11 @@ class Playlist:
 				'name': 'add',
 				'description': 'Add a song to the current playlist',
 				'use': '?playlist add [youtube_url]'
+			},
+			{
+				'name': 'autopilot',
+				'description': 'Toggle on to have the bot add to the playlist automatically based on what\'s currently playing',
+				'use': '?playlist autopilot'
 			},
 			{
 				'name': 'repeat',
@@ -87,20 +96,25 @@ class Playlist:
 					if 'entries' in info:
 						for entry in info['entries']:
 							if entry is not None:
-								new_song = SongEntry(message, entry)
+								new_song = SongEntry(message.author, entry)
 								self.songs.appendleft(new_song)
 						await self.bot.add_reaction(message, '🐦')
 					asyncio.ensure_future(self._play_next())
 					lower_bound = upper_bound+1
 			else:
 				info = await self._get_video_info(video_url, self.YOUTUBE_OPTS)
-				new_song = SongEntry(message, info)
+				new_song = SongEntry(message.author, info)
 				self.songs.appendleft(new_song)
 				await self.bot.add_reaction(message, '🐦')
 				await self._play_next()
 
 		except Exception as err:
 			raise(err)
+
+	async def autopilot(self, message):
+		if await self._user_in_voice_command(message):
+			self.is_autopilot = not self.is_autopilot
+			await self.bot.send_message(message.channel, 'Playlist autopilot set to: ' + str(self.is_autopilot))
 
 	async def repeat(self, message):
 		if await self._user_in_voice_command(message):
@@ -139,6 +153,7 @@ class Playlist:
 
 	async def on_voice_state_update(self, before, after):
 		if self.bot.voice is not None and len(self.bot.voice.channel.voice_members) <= 1:
+			self.is_autopilot = False
 			self.songs.clear()
 			self.bot.player.stop()
 			await self.bot.voice.disconnect()
@@ -147,6 +162,7 @@ class Playlist:
 		if not self.bot.is_playing() and self.current_song is None:
 			while True:
 				self.play_next_song.clear()
+				await self._run_autopilot()
 				self.current_song = None
 				try:
 					self.current_song = self.songs.pop()
@@ -184,6 +200,16 @@ class Playlist:
 		with youtube_dl.YoutubeDL(opts) as ydl:
 			func = functools.partial(ydl.extract_info, youtube_url, download=False)
 			return await self.bot.loop.run_in_executor(None, func)
+
+	async def _run_autopilot(self):
+		if self.is_autopilot and len(self.songs) <= 0:
+			async with aiohttp.ClientSession() as session:
+				with async_timeout.timeout(10):
+					async with session.get('https://www.googleapis.com/youtube/v3/search?type=video&relatedToVideoId=' + self.current_song.id + '&part=snippet&key=' + os.environ['YOUTUBE_API_KEY']) as response:
+						jsonBody = await response.json()
+						info = await self._get_video_info('https://www.youtube.com/watch?v=' + jsonBody['items'][0]['id']['videoId'], self.YOUTUBE_OPTS)
+						new_song = SongEntry('bot', info)
+						self.songs.appendleft(new_song)
 
 	def _finished(self):
 		self.bot.loop.call_soon_threadsafe(self.play_next_song.set)
