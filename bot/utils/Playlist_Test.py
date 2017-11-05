@@ -14,6 +14,7 @@ class PlaylistTest(unittest.TestCase):
 	def setUp(self):
 		self.bot_mock = MagicMock()
 		self.message_mock = MagicMock()
+		self.message_mock.channel = 'SomeChannel'
 		self.message_mock.author.voice_channel
 
 	@patch.object(Playlist, '_user_in_voice_command', new_callable=AsyncMock)
@@ -101,7 +102,6 @@ class PlaylistTest(unittest.TestCase):
 		self.assertFalse(self.bot_mock.player.resume.called)
 
 	def test_playing_empty_queue(self):
-		self.message_mock.channel = 'SomeChannel'
 		self.bot_mock.send_message = AsyncMock()
 		playlist = Playlist(self.bot_mock)
 
@@ -112,7 +112,6 @@ class PlaylistTest(unittest.TestCase):
 
 	@patch('utils.Playlist.SongEntry')
 	def test_playing_empty_queue_song_playing(self, song_entry_mock):
-		self.message_mock.channel = 'SomeChannel'
 		self.bot_mock.send_message = AsyncMock()
 		playlist = Playlist(self.bot_mock)
 
@@ -140,7 +139,6 @@ class PlaylistTest(unittest.TestCase):
 		song_embed_mock3 = {'title': 'oneMoreTitle', 'description': 'the last fake description'}
 		song3.get_embed_info.return_value = song_embed_mock3
 
-		self.message_mock.channel = 'SomeChannel'
 		self.bot_mock.send_message = AsyncMock()
 		playlist = Playlist(self.bot_mock)
 		playlist.songs = deque([song3, song2])
@@ -176,7 +174,6 @@ class PlaylistTest(unittest.TestCase):
 		song_embed_mock3 = {'title': 'oneMoreTitle', 'description': 'the last fake description'}
 		song3.get_embed_info.return_value = song_embed_mock3
 
-		self.message_mock.channel = 'SomeChannel'
 		self.bot_mock.send_message = AsyncMock()
 		playlist = Playlist(self.bot_mock)
 		playlist.songs = deque([song3, song3, song3, song3, song2])
@@ -214,7 +211,6 @@ class PlaylistTest(unittest.TestCase):
 
 	@patch.object(Playlist, '_user_in_voice_command', new_callable=AsyncMock)
 	def test_repeat_no_song_playing(self, user_in_voice_mock):
-		self.message_mock.channel = 'SomeChannel'
 		self.bot_mock.send_message = AsyncMock()
 		playlist = Playlist(self.bot_mock)
 		user_in_voice_mock.return_value = True

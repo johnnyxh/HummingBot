@@ -5,6 +5,7 @@ import time
 import sys
 
 from utils.Playlist import Playlist
+from utils.Image import Image
 
 if not discord.opus.is_loaded():
 	# the 'opus' library here is opus.dll on windows
@@ -21,7 +22,7 @@ class HummingBot(discord.Client):
 	   self.player = None
 	   self.voice = None
 	   self.start_timestamp = None
-	   self.modules = [Playlist(self)]
+	   self.modules = [Playlist(self), Image(self)]
 
 	def uptime(self):
 		if self.start_timestamp is None:
