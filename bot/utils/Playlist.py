@@ -24,6 +24,7 @@ class Playlist:
 
 	def __init__(self, bot):
 		self.bot = bot
+		self.player = None
 		self.songs = deque()
 		self.play_next_song = asyncio.Event()
 		self.current_song = None
@@ -34,42 +35,42 @@ class Playlist:
 			{
 				'name': 'add',
 				'description': 'Add a song to the current playlist',
-				'use': '?playlist add [youtube_url]'
+				'use': '?add [youtube_url]'
 			},
 			{
 				'name': 'autopilot',
 				'description': 'Toggle on to have the bot add to the playlist automatically based on what\'s currently playing',
-				'use': '?playlist autopilot'
+				'use': '?autopilot'
 			},
 			{
 				'name': 'repeat',
 				'description': 'Add the current song to the front of queue',
-				'use': '?playlist repeat'
+				'use': '?repeat'
 			},
 			{
 				'name': 'pause',
 				'description': 'Pause the current song',
-				'use': '?playlist pause'	
+				'use': '?pause'	
 			},
 			{
 				'name': 'resume',
 				'description': 'Resume the current song',
-				'use': '?playlist resume'
+				'use': '?resume'
 			},
 			{
 				'name': 'clear',
 				'description': 'Clear the entire playlist',
-				'use': '?playlist clear'
+				'use': '?clear'
 			},
 			{
 				'name': 'skip',
 				'description': 'Skip to the next song on the playlist',
-				'use': '?playlist skip'
+				'use': '?skip'
 			},
 			{
 				'name': 'playing',
 				'description': 'Get information on the current songs in the playlist',
-				'use': '?playlist playing'
+				'use': '?playing'
 			}
 		]
 		return commands
@@ -78,7 +79,7 @@ class Playlist:
 		try:
 			await self.bot.join_channel(message)
 
-			video_url = message.content.split()[2]
+			video_url = message.content.split()[1]
 
 			# Extract video information, possibly better in the SongEntry class
 			#TODO: May need to figure out how to use run_in_executor within SongEntry
@@ -123,21 +124,21 @@ class Playlist:
 
 	async def pause(self, message):
 		if await self._user_in_voice_command(message):
-			if self.bot.player is not None: self.bot.player.pause()
+			if self.player is not None: self.player.pause()
 
 	async def skip(self, message):
 		if await self._user_in_voice_command(message):
-			if self.bot.player is not None: self.bot.player.stop()
+			if self.player is not None: self.player.stop()
 
 	async def clear(self, message):
 		if await self._user_in_voice_command(message):
-			if self.bot.player is not None:
+			if self.player is not None:
 				self.songs.clear()
-				self.bot.player.stop()
+				self.player.stop()
 
 	async def resume(self, message):
 		if await self._user_in_voice_command(message):
-			if self.bot.player is not None: self.bot.player.resume()
+			if self.player is not None: self.player.resume()
 
 	async def playing(self, message):
 		song_list = list(self.songs)
@@ -155,11 +156,14 @@ class Playlist:
 		if self.bot.voice is not None and len(self.bot.voice.channel.voice_members) <= 1:
 			self.is_autopilot = False
 			self.songs.clear()
-			self.bot.player.stop()
+			self.player.stop()
 			await self.bot.voice.disconnect()
 
+	def is_playing(self):
+		return self.player is not None and self.player.is_playing()
+
 	async def _play_next(self):
-		if not self.bot.is_playing() and self.current_song is None:
+		if not self.is_playing() and self.current_song is None:
 			while True:
 				self.play_next_song.clear()
 				await self._run_autopilot()
@@ -167,10 +171,10 @@ class Playlist:
 				try:
 					self.current_song = self.songs.pop()
 					before_options = '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2'
-					self.bot.player = self.bot.voice.create_ffmpeg_player(self.current_song.url, before_options=before_options, after=self._finished)
+					self.player = self.bot.voice.create_ffmpeg_player(self.current_song.url, before_options=before_options, after=self._finished)
 					print('Playing: ' + self.current_song.title)
-					self.bot.player.volume = 0.45
-					self.bot.player.start()
+					self.player.volume = 0.45
+					self.player.start()
 					self.current_song.song_started()
 					await self.play_next_song.wait()
 				except :

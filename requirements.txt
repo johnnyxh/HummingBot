@@ -4,4 +4,3 @@ youtube_dl==2018.3.20
 discord==0.0.2
 PyNaCl==1.0.1
 tornado==4.5.2
-pillow==4.3.0

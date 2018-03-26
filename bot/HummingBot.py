@@ -5,7 +5,6 @@ import time
 import sys
 
 from utils.Playlist import Playlist
-from utils.Image import Image
 
 if not discord.opus.is_loaded():
 	# the 'opus' library here is opus.dll on windows
@@ -19,10 +18,9 @@ class HummingBot(discord.Client):
 	   super().__init__()
 	   self.sound_directory = sound_directory
 	   self.health= 'STARTING'
-	   self.player = None
 	   self.voice = None
 	   self.start_timestamp = None
-	   self.modules = [Playlist(self), Image(self)]
+	   self.playlist = Playlist(self)
 
 	def uptime(self):
 		if self.start_timestamp is None:
@@ -31,9 +29,6 @@ class HummingBot(discord.Client):
 		hours, rem = divmod(current_time-self.start_timestamp, 3600)
 		minutes, seconds = divmod(rem, 60)
 		return "{:0>2}h:{:0>2}m:{:0>2}s".format(int(hours),int(minutes),int(seconds))
-
-	def is_playing(self):
-		return self.player is not None and self.player.is_playing()
 
 	def show_module_help(self, module):
 		help_msg = 'Available commands in the ' + type(module).__name__.lower() + ' module are: \n\n'
@@ -73,34 +68,13 @@ class HummingBot(discord.Client):
 
 	#TODO: Possibly rethink this approach
 	async def on_voice_state_update(self, before, after):
-		try:
-			for module in self.modules:
-				await getattr(module, 'on_voice_state_update')(before, after)
-		except Exception as err:
-			print(err)
+		await self.playlist.on_voice_state_update(before, after)
 
 	#TODO: Refactor this ugly shit
 	async def execute_command(self, message):
 		if message.content.startswith('?'):
-			for module in self.modules:
-				if type(module).__name__.lower() == message.content.split()[0][1:]:
-					userCommand = message.content.split()[1]
-					for command in module.get_commands():
-						if command['name'] == userCommand:
-							return await getattr(module, userCommand)(message)
-					return await self.send_message(message.channel, self.show_module_help(module))
-			return await self.play_voice(message, message.content.split()[0][1:])
-
-	async def play_voice(self, message, sound):
-		soundname = os.path.join(self.sound_directory, sound)
-		filename = glob.glob(soundname + '.*')
-		if filename:
-			if not self.is_playing():
-				try:
-					await self.join_channel(message)
-					self.player = self.voice.create_ffmpeg_player(filename[0])
-					self.player.start();
-				except Exception as err:
-					print(err)
-		else:
-			await self.add_reaction(message, '❓')
+			userCommand = message.content.split()[0][1:]
+			for command in self.playlist.get_commands():
+				if command['name'] == userCommand:
+					return await getattr(self.playlist , userCommand)(message)
+			return await self.send_message(message.channel, self.show_module_help(self.playlist))

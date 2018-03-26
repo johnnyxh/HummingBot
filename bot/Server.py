@@ -38,12 +38,29 @@ class RestartHandler(tornado.web.RequestHandler):
 			print(err)
 			self.write({'status': 'failure'})
 
+class PlaylistHandler(tornado.web.RequestHandler):
+	def initialize(self, bot):
+		self.bot = bot
+
+	def get(self):
+		songs = []
+		current_song = None
+
+		if self.bot.playlist.current_song is not None:
+			current_song = self.bot.playlist.current_song.to_rest_dict()
+
+		for song in list(self.bot.playlist.songs):
+			songs.insert(0, song.to_rest_dict())
+
+		self.write({'songs': songs, 'currentSong': current_song})
+
 def make_server(bot):
 	return tornado.web.Application([
 		(r"/api/health", HealthHandler, dict(bot=bot)),
 		(r"/api/restart", RestartHandler, dict(bot=bot)),
+		(r"/api/playlist", PlaylistHandler, dict(bot=bot)),
 		(r"/(.*)", tornado.web.StaticFileHandler, {'path': os.path.join(os.path.dirname(__file__), 'static'), 'default_filename': 'index.html'}),
-	])
+	], compress_response=True)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Starts up the HummingBot + Server.')

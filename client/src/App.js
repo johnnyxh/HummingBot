@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import HeaderContainer from './components/HeaderContainer';
 import NavigationBar from './components/NavigationBar';
+import ContentContainer from './components/ContentContainer';
 import { Container, Row, Col } from 'reactstrap';
 
 class App extends Component {
@@ -11,6 +12,7 @@ class App extends Component {
 					<Col sm="12">
             			<HeaderContainer />
             			<NavigationBar />
+                        <ContentContainer />
 					</Col>
 				</Row>
 			</Container>
