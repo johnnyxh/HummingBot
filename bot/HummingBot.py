@@ -74,7 +74,8 @@ class HummingBot(discord.Client):
 	async def execute_command(self, message):
 		if message.content.startswith('?'):
 			userCommand = message.content.split()[0][1:]
+			if userCommand == 'help':
+				return await self.send_message(message.channel, self.show_module_help(self.playlist))
 			for command in self.playlist.get_commands():
 				if command['name'] == userCommand:
 					return await getattr(self.playlist , userCommand)(message)
-			return await self.send_message(message.channel, self.show_module_help(self.playlist))
