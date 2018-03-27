@@ -14,6 +14,13 @@ export default class PlaylistItem extends Component {
 		window.open(`https://www.youtube.com/watch?v=${this.props.videoId}`);
 	}
 
+	renderDuration() {
+		if (this.props.isLive) {
+			return (<span className='playlist-item-vertical-align'><strong style={{'color': 'red'}}>&#x25cf; LIVE</strong></span>)
+		}
+		return (<span className='playlist-item-vertical-align'>{getTimestamp(this.props.duration)}</span>)
+	}
+
 	render() {
 		return(
 			<Row style={{ cursor: 'pointer' }} onClick={this.onSelected}>
@@ -31,7 +38,7 @@ export default class PlaylistItem extends Component {
 						</Media>
 						<Media className='sm-hide' right>
 							<span className='playlist-item-vertical-align playlist-item-requester'>Requested by: {this.props.requester}</span>
-							<span className='playlist-item-vertical-align'>{getTimestamp(this.props.duration)}</span>
+							{this.renderDuration()}
 						</Media>
 					</Media>
 				</Col>

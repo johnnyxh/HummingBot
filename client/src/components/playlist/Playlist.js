@@ -25,7 +25,8 @@ export default class Playlist extends Component {
 						uploader={this.props.currentSong.uploader}
 						requester={this.props.currentSong.requester}
 						timestamp={this.props.currentSong.timestamp}
-						duration={this.props.currentSong.duration} />
+						duration={this.props.currentSong.duration}
+						isLive={this.props.currentSong.isLive} />
 					<br/> 
 				</div>
 			);
@@ -39,11 +40,12 @@ export default class Playlist extends Component {
 						<td>
 							<PlaylistItem
 								position={++index}
-								videoId={song.videoId} 
+								videoId={song.videoId}
 								title={song.title}
 								uploader={song.uploader}
 								requester={song.requester}
-								duration={song.duration} />
+								duration={song.duration}
+								isLive={song.isLive} />
 						</td>
 					</tr>
 				)

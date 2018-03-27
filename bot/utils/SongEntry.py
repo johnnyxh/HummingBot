@@ -10,6 +10,7 @@ class SongEntry:
 		self.title = info.get('title')
 		self.id = info.get('id')
 		self.duration = info.get('duration')
+		self.is_live = info.get('is_live')
 		self.play_start = 0
 
 	def song_started(self):
@@ -27,4 +28,4 @@ class SongEntry:
 		return song_embed
 
 	def to_rest_dict(self):
-		return {'videoId': self.id, 'uploader': self.uploader, 'title': self.title, 'requester': self.requester, 'duration': self.duration, 'timestamp': math.floor(time.time())-self.play_start}
+		return {'videoId': self.id, 'uploader': self.uploader, 'title': self.title, 'requester': self.requester, 'duration': self.duration, 'timestamp': math.floor(time.time())-self.play_start, 'isLive': self.is_live}
