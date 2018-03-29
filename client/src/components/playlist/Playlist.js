@@ -7,12 +7,16 @@ import PlaylistCurrentItem from './PlaylistCurrentItem';
 export default class Playlist extends Component {
 	
 	componentDidMount() {
-		this.props.updatePlaylist();
-		this.updateTimer = setInterval(this.props.updatePlaylist, 5000);
+		// Using setTimeout to ensure we wait for pending playlist calls
+		const update = function () {
+			this.props.updatePlaylist();
+			this.updateTimer = setTimeout(update, 5000)
+		}.bind(this);
+		update();
 	}
 
 	componentWillUnmount() {
-		clearInterval(this.updateTimer);
+		clearTimeout(this.updateTimer);
 	}
 
 	renderPlaylistCurrentItem() {

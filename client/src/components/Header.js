@@ -6,12 +6,16 @@ import healthIcon from '../keke2.gif';
 export default class Header extends Component {
 
 	componentDidMount() {
-		this.props.updateHealth()
-		this.healthTimer = setInterval(this.props.updateHealth, 5000);
+		// Using setTimeout to ensure we wait for pending playlist calls
+		const update = function () {
+			this.props.updateHealth()
+			this.updateTimer = setTimeout(update, 5000);
+		}.bind(this);
+		update();
 	}
 
 	componentWillUnmount() {
-		clearInterval(this.healthTimer);
+		clearTimeout(this.updateTimer);
 	}
 
 	render() {
