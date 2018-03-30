@@ -170,9 +170,9 @@ class Playlist:
 				self.current_song = None
 				try:
 					self.current_song = self.songs.pop()
-					before_options = '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2'
+					before_options = '-ss {} -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2'.format(self.current_song.start_time)
 					self.player = self.bot.voice.create_ffmpeg_player(self.current_song.url, before_options=before_options, after=self._finished)
-					print('Playing: ' + self.current_song.title)
+					print('Playing: {}'.format(self.current_song.title))
 					self.player.volume = 0.45
 					self.player.start()
 					self.current_song.song_started()
