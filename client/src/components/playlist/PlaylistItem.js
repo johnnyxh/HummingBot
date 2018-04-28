@@ -4,7 +4,6 @@ import { Media, Col, Row } from 'reactstrap';
 import { getTimestamp } from '../../utils/timestamps';
 
 export default class PlaylistItem extends Component {
-
 	constructor(props) {
 		super(props)
 		this.onSelected = this.onSelected.bind(this);

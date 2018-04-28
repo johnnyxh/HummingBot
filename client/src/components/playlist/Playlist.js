@@ -5,7 +5,6 @@ import PlaylistItem from './PlaylistItem';
 import PlaylistCurrentItem from './PlaylistCurrentItem';
 
 export default class Playlist extends Component {
-	
 	componentDidMount() {
 		// Using setTimeout to ensure we wait for pending playlist calls
 		const update = function () {

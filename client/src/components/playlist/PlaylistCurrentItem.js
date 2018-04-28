@@ -4,6 +4,15 @@ import { Col, Card, CardBody, Progress, Row, Table } from 'reactstrap';
 import { getTimestamp } from '../../utils/timestamps';
 
 export default class PlaylistCurrentItem extends Component {
+	constructor(props) {
+		super(props)
+		this.onSelected = this.onSelected.bind(this);
+	}
+
+	onSelected(event) {
+		window.open(`https://www.youtube.com/watch?v=${this.props.videoId}`);
+	}
+
 	renderDuration() {
 		if (this.props.isLive) {
 			return (<p style={{'text-align': 'right'}}><strong style={{'color': 'red'}}>&#x25cf; LIVE</strong></p>)
@@ -13,7 +22,7 @@ export default class PlaylistCurrentItem extends Component {
 
 	render() {
 		return(
-			<Card>
+			<Card style={{ cursor: 'pointer' }} onClick={this.onSelected}>
 				<CardBody>
 					<Row>
 						<Col md='auto'>
