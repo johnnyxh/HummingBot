@@ -14,10 +14,46 @@ if not discord.opus.is_loaded():
 	discord.opus.load_opus(os.environ['LIBOPUS_PATH'])
 
 class HummingBot(discord.Client):
-	def __init__(self, sound_directory):
+	def __init__(self):
 	   super().__init__()
-	   self.sound_directory = sound_directory
 	   self.health= 'STARTING'
+	   self.commands = [
+			{
+				'name': 'add',
+				'description': 'Add a song to the current playlist, optionally add number of songs to add',
+				'use': '?add [youtube_url] [number_of_times_to_add]'
+			},
+			{
+				'name': 'recommend',
+				'description': 'Allow the bot to queue up additional songs based on what is currently playing, will add 5 songs by default',
+				'use': '?recommend [number_of_songs_to_recommend]'
+			},
+			{
+				'name': 'pause',
+				'description': 'Pause the current song',
+				'use': '?pause'	
+			},
+			{
+				'name': 'resume',
+				'description': 'Resume the current song',
+				'use': '?resume'
+			},
+			{
+				'name': 'clear',
+				'description': 'Clear the entire playlist',
+				'use': '?clear'
+			},
+			{
+				'name': 'skip',
+				'description': 'Skip to the next song on the playlist, optionally add number of songs to skip',
+				'use': '?skip [number_of_songs_to_skip]'
+			},
+			{
+				'name': 'playing',
+				'description': 'Get information on the current songs in the playlist',
+				'use': '?playing'
+			}
+		]
 	   self.voice = None
 	   self.start_timestamp = None
 	   self.playlist = Playlist(self)
@@ -30,9 +66,9 @@ class HummingBot(discord.Client):
 		minutes, seconds = divmod(rem, 60)
 		return "{:0>2}h:{:0>2}m:{:0>2}s".format(int(hours),int(minutes),int(seconds))
 
-	def show_module_help(self, module):
-		help_msg = 'Available commands in the ' + type(module).__name__.lower() + ' module are: \n\n'
-		for command in module.get_commands():
+	def get_help_message(self):
+		help_msg = 'Available commands are: \n\n'
+		for command in self.commands:
 			help_msg += '\n'.join([command['name'], command['description'], command['use'], '\n'])
 		return help_msg
 
@@ -46,7 +82,6 @@ class HummingBot(discord.Client):
 		except discord.InvalidArgument as err:
 			await self.send_message(message.channel, 'You should get in a voice channel first')
 			raise err
-
 
 	async def on_ready(self):
 		self.start_timestamp = time.time()
@@ -75,7 +110,7 @@ class HummingBot(discord.Client):
 		if message.content.startswith('?'):
 			userCommand = message.content.split()[0][1:]
 			if userCommand == 'help':
-				return await self.send_message(message.channel, self.show_module_help(self.playlist))
-			for command in self.playlist.get_commands():
+				return await self.send_message(message.channel, self.get_help_message())
+			for command in self.commands:
 				if command['name'] == userCommand:
 					return await getattr(self.playlist , userCommand)(message)
