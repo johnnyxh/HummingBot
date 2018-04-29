@@ -30,7 +30,7 @@ class RestartHandler(tornado.web.RequestHandler):
 		try:
 			loop = asyncio.get_event_loop()
 			await self.bot.logout()
-			self.bot.__init__(args.sound_directory)
+			self.bot.__init__()
 			loop.create_task(bot.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
 			await bot.wait_until_ready()
 			self.write({'status': 'success'})
