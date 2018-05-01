@@ -20,10 +20,9 @@ class SongEntry:
 	def __init__(self, requester, request_url):
 		self.requester = requester.display_name
 		self.request_url = request_url
-		self.play_start = 0
 
-	async def create(self):
-		info = await self._get_video_info(self.request_url)
+	async def create(self, info = None):
+		info = info or await self._get_video_info(self.request_url)
 		self.url = info.get('url')
 		self.uploader = info.get('uploader')
 		self.title = info.get('title')
@@ -32,22 +31,13 @@ class SongEntry:
 		self.start_time = info.get('start_time') or 0
 		self.is_live = info.get('is_live')
 
-	def song_started(self):
-		self.play_start = math.floor(time.time())
-
-	def get_current_timestamp(self):
-		current_time = math.floor(time.time() + self.start_time)
-		hours, rem = divmod(current_time-self.play_start, 3600)
-		minutes, seconds = divmod(rem, 60)
-		return "{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds)
-
 	def get_embed_info(self, description):
 		song_embed = discord.Embed(title=self.title, description=description, colour=0xDEADBF)
 		song_embed.set_thumbnail(url='https://img.youtube.com/vi/{}/0.jpg'.format(self.id))
 		return song_embed
 
 	def to_rest_dict(self):
-		return {'videoId': self.id, 'uploader': self.uploader, 'title': self.title, 'requester': self.requester, 'duration': self.duration, 'timestamp': math.floor(time.time() + self.start_time)-self.play_start, 'isLive': self.is_live}
+		return {'videoId': self.id, 'uploader': self.uploader, 'title': self.title, 'requester': self.requester, 'duration': self.duration, 'isLive': self.is_live}
 
 	async def get_recommendations(self, requester, recommendation_amount=5,):
 		recommendations = []

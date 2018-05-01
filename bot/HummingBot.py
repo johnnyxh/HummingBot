@@ -5,6 +5,7 @@ import time
 import sys
 
 from utils.Playlist import Playlist
+from utils.Timer import Timer
 
 if not discord.opus.is_loaded():
 	# the 'opus' library here is opus.dll on windows
@@ -55,16 +56,11 @@ class HummingBot(discord.Client):
 			}
 		]
 	   self.voice = None
-	   self.start_timestamp = None
+	   self.timer = Timer()
 	   self.playlist = Playlist(self)
 
 	def uptime(self):
-		if self.start_timestamp is None:
-			return "00h:00m:00.00s"
-		current_time = time.time()
-		hours, rem = divmod(current_time-self.start_timestamp, 3600)
-		minutes, seconds = divmod(rem, 60)
-		return "{:0>2}h:{:0>2}m:{:0>2}s".format(int(hours),int(minutes),int(seconds))
+		return self.timer.get_current_timestamp()
 
 	def get_help_message(self):
 		help_msg = 'Available commands are: \n\n'
@@ -84,7 +80,7 @@ class HummingBot(discord.Client):
 			raise err
 
 	async def on_ready(self):
-		self.start_timestamp = time.time()
+		self.timer.start()
 		self.health = 'UP'
 
 		print('Logging in as:')

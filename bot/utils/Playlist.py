@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from urllib.parse import parse_qs
 
 from utils.SongEntry import SongEntry
+from utils.Timer import Timer
 
 class Playlist:
 	YOUTUBE_OPTS = {
@@ -26,6 +27,7 @@ class Playlist:
 		self.songs = deque()
 		self.play_next_song = asyncio.Event()
 		self.current_song = None
+		self.current_song_timer = None
 
 	async def add(self, message):
 		try:
@@ -54,8 +56,9 @@ class Playlist:
 					if 'entries' in info:
 						for entry in info['entries']:
 							if entry is not None:
-								new_song = SongEntry(message.author, entry)
-								await new_song.create()
+								# Temporary workaround for playlist case, this logic should move
+								new_song = SongEntry(message.author, entry.get('url'))
+								await new_song.create(entry)
 								self.songs.appendleft(new_song)
 						await self.bot.add_reaction(message, '🐦')
 					asyncio.ensure_future(self._play_next())
@@ -86,10 +89,6 @@ class Playlist:
 
 			self.songs.extendleft(recommendations)
 
-	async def pause(self, message):
-		if await self._user_in_voice_command(message):
-			if self.player is not None: self.player.pause()
-
 	async def skip(self, message):
 		if await self._user_in_voice_command(message):
 
@@ -103,15 +102,23 @@ class Playlist:
 			finally:
 				if self.player is not None: self.player.stop()
 
+	async def pause(self, message):
+		if await self._user_in_voice_command(message):
+			if self.player is not None and self.player.is_playing():
+				self.player.pause()
+				self.current_song_timer.pause()
+
+	async def resume(self, message):
+		if await self._user_in_voice_command(message):
+			if self.player is not None and not self.player.is_playing(): 
+				self.player.resume()
+				self.current_song_timer.resume()
+
 	async def clear(self, message):
 		if await self._user_in_voice_command(message):
 			if self.player is not None:
 				self.songs.clear()
 				self.player.stop()
-
-	async def resume(self, message):
-		if await self._user_in_voice_command(message):
-			if self.player is not None: self.player.resume()
 
 	async def playing(self, message):
 		song_list = list(self.songs)
@@ -123,7 +130,7 @@ class Playlist:
 		for song in song_list[len(song_list)-self.PLAYLIST_PLAYING_RANGE:]:
 			await self.bot.send_message(message.channel, embed=song.get_embed_info('Coming up'))
 
-		return await self.bot.send_message(message.channel, embed=self.current_song.get_embed_info('Now Playing - {}'.format(self.current_song.get_current_timestamp())))
+		return await self.bot.send_message(message.channel, embed=self.current_song.get_embed_info('Now Playing - {}'.format(self.current_song_timer.get_current_timestamp())))
 
 	async def on_voice_state_update(self, before, after):
 		if self.bot.voice is not None and len(self.bot.voice.channel.voice_members) <= 1:
@@ -145,7 +152,8 @@ class Playlist:
 					self.player = self.bot.voice.create_ffmpeg_player(self.current_song.url, before_options=before_options, after=self._finished)
 					print('Playing: {}'.format(self.current_song.title))
 					self.player.start()
-					self.current_song.song_started()
+					self.current_song_timer = Timer()
+					self.current_song_timer.start()
 					await self.play_next_song.wait()
 				except :
 					return
