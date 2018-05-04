@@ -17,8 +17,9 @@ class SongEntry:
 		'ignoreerrors': True
 	}
 
-	def __init__(self, requester, request_url):
+	def __init__(self, requester, channel, request_url):
 		self.requester = requester.display_name
+		self.request_channel = channel
 		self.request_url = request_url
 
 	async def create(self, info = None):
@@ -46,7 +47,7 @@ class SongEntry:
 				json_body = await response.json()
 				for entry in json_body['items']:
 					url = 'https://www.youtube.com/watch?v={}'.format(entry['id']['videoId']) 
-					new_song = SongEntry(requester, url)
+					new_song = SongEntry(requester, self.request_channel, url)
 					await new_song.create()
 					recommendations.append(new_song)
 		return recommendations

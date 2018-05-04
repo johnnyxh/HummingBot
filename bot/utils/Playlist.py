@@ -57,14 +57,14 @@ class Playlist:
 						for entry in info['entries']:
 							if entry is not None:
 								# Temporary workaround for playlist case, this logic should move
-								new_song = SongEntry(message.author, entry.get('url'))
+								new_song = SongEntry(message.author, message.channel, entry.get('url'))
 								await new_song.create(entry)
 								self.songs.appendleft(new_song)
 						await self.bot.add_reaction(message, '🐦')
 					asyncio.ensure_future(self._play_next())
 					lower_bound = upper_bound+1
 			else:
-				new_song = SongEntry(message.author, video_url)
+				new_song = SongEntry(message.author, message.channel, video_url)
 				await new_song.create()
 				for songs in range(add_count):
 					self.songs.appendleft(new_song)
@@ -150,10 +150,11 @@ class Playlist:
 					self.current_song = self.songs.pop()
 					before_options = '-ss {} -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2'.format(self.current_song.start_time)
 					self.player = self.bot.voice.create_ffmpeg_player(self.current_song.url, before_options=before_options, after=self._finished)
-					print('Playing: {}'.format(self.current_song.title))
 					self.player.start()
 					self.current_song_timer = Timer()
 					self.current_song_timer.start()
+					print('Playing: {}'.format(self.current_song.title))
+					await self.bot.send_message(self.current_song.request_channel, embed=self.current_song.get_embed_info('Now Playing')) 
 					await self.play_next_song.wait()
 				except :
 					return
