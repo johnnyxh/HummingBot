@@ -16,7 +16,7 @@ if not discord.opus.is_loaded():
 	discord.opus.load_opus(os.environ['LIBOPUS_PATH'])
 
 class HummingBot(discord.Client):
-	def __init__(self, connection_uri = None):
+	def __init__(self, connection_uri = None, db = None):
 	   super().__init__()
 	   self.health= 'STARTING'
 	   self.commands = [
@@ -58,7 +58,7 @@ class HummingBot(discord.Client):
 		]
 	   self.voice = None
 	   self.timer = Timer()
-	   self.store = Datastore(connection_uri)
+	   self.store = Datastore(connection_uri, db)
 	   self.playlist = Playlist(self)
 
 	def uptime(self):

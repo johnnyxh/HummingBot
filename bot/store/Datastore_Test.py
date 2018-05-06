@@ -28,17 +28,17 @@ class DatastoreTest(unittest.TestCase):
 	def test_insert_new(self, motor_mock):
 		song = MagicMock()
 
-		mock_connection = AsyncMock()
+		mock_connection = { 'hummingbot': AsyncMock() }
 		motor_mock.AsyncIOMotorClient.return_value = mock_connection
 
 		song.to_rest_dict.return_value = { 'videoId': 'kUaAszRmBbQ', 'title': 'Partner' }
-		mock_connection.hummingbot.songs.find_one_and_update.return_value = None
+		mock_connection['hummingbot'].songs.find_one_and_update.return_value = None
 
 		datastore = Datastore()
 		loop = asyncio.get_event_loop()
 		loop.run_until_complete(datastore.insert_song(song, 'piano'))
 
-		args, kwargs = mock_connection.hummingbot.songs.insert_one.call_args
+		args, kwargs = mock_connection['hummingbot'].songs.insert_one.call_args
 		self.assertEqual(args, ({ 'videoId': 'kUaAszRmBbQ', 'title': 'Partner', 'play_count': 1, 'skip_count': 0, 'song_label': 'piano' },))
 
 	@patch('store.Datastore.motor.motor_asyncio')
@@ -46,14 +46,14 @@ class DatastoreTest(unittest.TestCase):
 		song = MagicMock()
 		song.id = 'kUaAszRmBbQ'
 
-		mock_connection = AsyncMock()
+		mock_connection = { 'hummingbot': AsyncMock() }
 		motor_mock.AsyncIOMotorClient.return_value = mock_connection
 
 		datastore = Datastore()
 		loop = asyncio.get_event_loop()
 		loop.run_until_complete(datastore.insert_song(song))
 
-		args, kwargs = mock_connection.hummingbot.songs.find_one_and_update.call_args
+		args, kwargs = mock_connection['hummingbot'].songs.find_one_and_update.call_args
 		self.assertEqual(args, ({'videoId': 'kUaAszRmBbQ'}, {'$inc': { 'play_count': 1 } },))
 
 	@patch('store.Datastore.motor.motor_asyncio')
@@ -61,12 +61,12 @@ class DatastoreTest(unittest.TestCase):
 		song = MagicMock()
 		song.id = 'kUaAszRmBbQ'
 
-		mock_connection = AsyncMock()
+		mock_connection = { 'hummingbot': AsyncMock() }
 		motor_mock.AsyncIOMotorClient.return_value = mock_connection
 
 		datastore = Datastore()
 		loop = asyncio.get_event_loop()
 		loop.run_until_complete(datastore.update_song_skipped(song))
 
-		args, kwargs = mock_connection.hummingbot.songs.find_one_and_update.call_args
+		args, kwargs = mock_connection['hummingbot'].songs.find_one_and_update.call_args
 		self.assertEqual(args, ({'videoId': 'kUaAszRmBbQ'}, {'$inc': { 'skip_count': 1 } },))
