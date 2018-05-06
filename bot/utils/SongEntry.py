@@ -38,7 +38,7 @@ class SongEntry:
 		return song_embed
 
 	def to_rest_dict(self):
-		return {'videoId': self.id, 'uploader': self.uploader, 'title': self.title, 'requester': self.requester, 'duration': self.duration, 'isLive': self.is_live}
+		return {'videoId': self.id, 'uploader': self.uploader, 'title': self.title, 'requester': self.requester, 'duration': self.duration, 'isLive': self.is_live, 'request_url': self.request_url, 'download_url': self.url}
 
 	async def get_recommendations(self, requester, recommendation_amount=5,):
 		recommendations = []

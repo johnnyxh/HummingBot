@@ -2,6 +2,7 @@ import asyncio
 import async_timeout
 import youtube_dl
 import functools
+import traceback
 from collections import deque
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -97,10 +98,13 @@ class Playlist:
 				if len(args) > 1:
 					for x in range(int(args[1])-1):
 						self.songs.pop()
+				# Only mark the current song as skipped for now
+				await self.bot.store.update_song_skipped(self.current_song)
 			except IndexError as err:
 				pass
 			finally:
-				if self.player is not None: self.player.stop()
+				if self.player is not None:
+					self.player.stop()
 
 	async def pause(self, message):
 		if await self._user_in_voice_command(message):
@@ -141,6 +145,7 @@ class Playlist:
 	def is_playing(self):
 		return self.player is not None and self.player.is_playing()
 
+	# Need to start rethinking this loop
 	async def _play_next(self):
 		if not self.is_playing() and self.current_song is None:
 			while True:
@@ -151,12 +156,22 @@ class Playlist:
 					before_options = '-ss {} -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2'.format(self.current_song.start_time)
 					self.player = self.bot.voice.create_ffmpeg_player(self.current_song.url, before_options=before_options, after=self._finished)
 					self.player.start()
-					self.current_song_timer = Timer()
-					self.current_song_timer.start()
-					print('Playing: {}'.format(self.current_song.title))
-					await self.bot.send_message(self.current_song.request_channel, embed=self.current_song.get_embed_info('Now Playing')) 
-					await self.play_next_song.wait()
+
+					# These operations are not needed for the playlist loop, print exception
+					# Keep the functionality going
+					try:
+						self.current_song_timer = Timer()
+						self.current_song_timer.start()
+						print('Playing: {}'.format(self.current_song.title))
+						await self.bot.send_message(self.current_song.request_channel, embed=self.current_song.get_embed_info('Now Playing'))
+						await self.bot.store.insert_song(self.current_song)
+					except :
+						traceback.print_exc()
+					finally:
+						await self.play_next_song.wait()
 				except :
+					# An error, most likely from trying to pop an empty deque, should stop the playtlist loop
+					# The next song added to the queue will restart the playlist loop
 					return
 
 	async def _user_in_voice_command(self, message):

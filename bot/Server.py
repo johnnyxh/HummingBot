@@ -67,12 +67,13 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Starts up the HummingBot + Server.')
 	parser.add_argument('-t', '--token', dest='token', action='store', help='Your API Bot User token', required=False)
 	parser.add_argument('-p', '--port', dest='port', action='store', help='Port to run the webserver on', required=False)
+	parser.add_argument('-m', '--mongodb-uri', dest='mongodb_uri', action='store', help='Mongodb connection uri to store user submitted songs', required=False)
 
 	args = parser.parse_known_args()[0]
 
 	loop = asyncio.get_event_loop()
 
-	bot = HummingBot()
+	bot = HummingBot(args.mongodb_uri or os.environ['MONGODB_URI'])
 	loop.create_task(bot.start(args.token or os.environ['HUMMINGBOT_TOKEN']))
 
 	AsyncIOMainLoop().install()

@@ -4,6 +4,7 @@ import glob
 import time
 import sys
 
+from store.Datastore import Datastore
 from utils.Playlist import Playlist
 from utils.Timer import Timer
 
@@ -15,7 +16,7 @@ if not discord.opus.is_loaded():
 	discord.opus.load_opus(os.environ['LIBOPUS_PATH'])
 
 class HummingBot(discord.Client):
-	def __init__(self):
+	def __init__(self, connection_uri = None):
 	   super().__init__()
 	   self.health= 'STARTING'
 	   self.commands = [
@@ -57,6 +58,7 @@ class HummingBot(discord.Client):
 		]
 	   self.voice = None
 	   self.timer = Timer()
+	   self.store = Datastore(connection_uri)
 	   self.playlist = Playlist(self)
 
 	def uptime(self):
