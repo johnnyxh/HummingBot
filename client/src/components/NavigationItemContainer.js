@@ -11,7 +11,7 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => {
     return {
         changeNav: (view) => {
-            dispatch(navigationChange(view))
+            dispatch(navigationChange(view));
         }
     };
 };

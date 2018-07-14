@@ -17,22 +17,6 @@ class SongEntryTest(unittest.TestCase):
 
 		self.embed_mock = MagicMock()
 
-	@patch('utils.SongEntry.time')
-	def test_song_started_sets_start_timestamp(self, time_mock):
-		time_mock.time.return_value = 12345;
-		song = SongEntry(self.author, self.info_mock)
-		song.song_started()
-
-		self.assertEqual(song.play_start, 12345)
-
-	@patch('utils.SongEntry.time')
-	def test_get_current_timestamp_produces_timestamp(self, time_mock):
-		time_mock.time.return_value = 20768;
-		song = SongEntry(self.author, self.info_mock)
-		song.play_start = 10200
-
-		self.assertEqual(song.get_current_timestamp(), '02:56:08.00')
-
 	@patch('utils.SongEntry.discord')
 	def test_get_embed_info(self, discord_mock):
 		discord_mock.Embed.return_value = self.embed_mock

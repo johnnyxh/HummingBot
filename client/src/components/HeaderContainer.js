@@ -16,8 +16,8 @@ const mapDispatchToProps = (dispatch) => {
         updateHealth: () => {
             dispatch(updateHealth())
         },
-        restartBot: () => {
-        	dispatch(restartBot())
+        restartBot: (server) => {
+        	dispatch(restartBot(server))
         	dispatch(updateHealth())
         }
     };

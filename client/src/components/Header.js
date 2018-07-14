@@ -4,6 +4,10 @@ import { Button, Row, Col, Card, CardBody } from 'reactstrap';
 import healthIcon from '../keke2.gif';
 
 export default class Header extends Component {
+	constructor(props) {
+		super(props)
+		this.onRestartClick = this.onRestartClick.bind(this);
+	}
 
 	componentDidMount() {
 		// Using setTimeout to ensure we wait for pending playlist calls
@@ -16,6 +20,10 @@ export default class Header extends Component {
 
 	componentWillUnmount() {
 		clearTimeout(this.updateTimer);
+	}
+
+	onRestartClick() {
+		this.props.restartBot(this.props.server)
 	}
 
 	render() {
@@ -40,7 +48,7 @@ export default class Header extends Component {
 								</Col>
 								<Col xs="0" md="10" />
 								<Col className="md-bottom-right-align" xs="12" lg="2">
-									<Button color="primary" size="sm" block disabled={this.props.pendingRestart} onClick={this.props.restartBot}>Restart Bot</Button>
+									<Button color="primary" size="sm" block disabled={this.props.pendingRestart} onClick={this.onRestartClick}>Restart Bot</Button>
 								</Col>
 							</Row>
 						</Col>

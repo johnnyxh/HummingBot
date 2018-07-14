@@ -1,4 +1,6 @@
 import {
+    USER_REQUESTED,
+    USER_COMPLETE,
     HEALTH_REQUESTED,
     HEALTH_COMPLETE,
     RESTART_REQUESTED,
@@ -15,13 +17,19 @@ export function botReducer(
         uptime: 'Unknown',
         currentSong: null,
         songs: [],
+        pendingUser: false,
         pendingHealth: false,
         pendingRestart: false,
         pendingPlaylist: false,
+        user: null
     },
     action
 ) {
     switch (action.type) {
+        case USER_COMPLETE:
+            return Object.assign({}, state, { user: action.payload }, {
+                pendingUser: false
+            });
         case HEALTH_COMPLETE:
             return Object.assign({}, state, action.payload, {
                 pendingHealth: false
@@ -33,6 +41,10 @@ export function botReducer(
         case RESTART_COMPLETE:
             return Object.assign({}, state, {
                 pendingRestart: false
+            });
+        case USER_REQUESTED:
+            return Object.assign({}, state, {
+                pendingUser: true
             });
         case HEALTH_REQUESTED:
             return Object.assign({}, state, {
